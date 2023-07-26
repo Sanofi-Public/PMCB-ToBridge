@@ -37,7 +37,7 @@ PARSER.add_argument("--fastqc", required=False, action='store_true', default=Tru
 
 PARSER.add_argument("--star_solo", required=False, action='store_true', default=False,
                     help="Path to STAR Solo input")
-PARSER.add_argument("--star_solo_chem", required=False, default=False,
+PARSER.add_argument("--star_solo_chem", required=False, 
                     help="What is the chemistry?")
 PARSER.add_argument("--star_solo_features", required=False, default="GeneFull_Ex50pAS",
                     help="Quantification of different features")
@@ -46,12 +46,16 @@ PARSER.add_argument("--star_solo_genome_generate", action='store_true', required
 
 PARSER.add_argument("--cr_count", required=False, action='store_true', default=False,
                     help="Path to cellranger input")
+PARSER.add_argument("--cr_count_chemistry", required=False,
+                    help="Specify chemistry if cannot be detected automatically")
+PARSER.add_argument("--cr_count_forcecells", required=False,
+                    help="Force a certain number of cells")
+
 PARSER.add_argument("--cr_count_feature", required=False, action='store_true', default=False,
                     help="Feature bacrode assay")
 
-PARSER.add_argument("--samp", required=False,
-                    help="If you only want cellranger run on specific samples, use this flag",
-                    default="All")
+PARSER.add_argument("--samp", required=False, default="All",
+                    help="If you only want cellranger run on specific samples, use this flag")
 
 # PACKAGES
 PACKAGES = {}
@@ -116,10 +120,16 @@ if ARGIES.fastqc:
 if ARGIES.cr_count:
     ARGDICT["cr_count"] = ARGIES.cr_count
     
+if ARGIES.cr_count_chemistry:
+    ARGDICT["cr_count_chemistry"] = ARGIES.cr_count_chemistry
+
+if ARGIES.cr_count_forcecells:
+    ARGDICT["cr_count_forcecells"] = ARGIES.cr_count_forcecells
+    
 if ARGIES.cr_count_feature:
     ARGDICT["cr_count_feature"] = ARGIES.cr_count_feature
 
-if "cr_count" in ARGDICT and "cr_count_reference" not in ARGDICT:
+if ("cr_count" in ARGDICT or "cr_count_feature" in ARGDICT) and "cr_count_reference" not in ARGDICT:
     sys.exit("please provide a reference genome \
              for cellranger count in the cr_count_reference directory")
     
@@ -168,7 +178,7 @@ if "cr_mkfastq" in ARGDICT:
                        f'--samplesheet {dirra}/SampleSheet.csv '
                        f'--id {dirra_name}')
         print(bcl2fastq_command)
-        #subprocess.call(f"{bcl2fastq_command}", shell=True)
+        subprocess.call(f"{bcl2fastq_command}", shell=True)
         if not os.path.isdir(f'/data/input_fastq/{dirra_name}'):
             os.mkdir(f'/data/input_fastq/{dirra_name}')
         outfolders = glob.glob(f'/data/bcl_conversion/{dirra_name}/outs/fastq_path/*/')
@@ -229,9 +239,9 @@ if "bcl_convert" in ARGDICT:
         else:
             print(f'The fastq directory {dirra_name} already exists. Overriding older files')
         fastq_output = glob.glob(f'/data/bcl_conversion/{dirra_name}/*.fastq.gz')
-        #for fastq in fastq_output:
-            #if "Undetermined" not in fastq:
-                #shutil.move(f'{fastq}', f'/data/input_fastq/{dirra_name}')
+        for fastq in fastq_output:
+            if "Undetermined" not in fastq:
+                shutil.move(f'{fastq}', f'/data/input_fastq/{dirra_name}')
         #FASTqc 
         if "fastqc" in ARGDICT:
             print("RUNNING FASTQC")
@@ -282,7 +292,11 @@ if "cr_count" in ARGDICT or "cr_count_feature" in ARGDICT:
                        f'--sample {sample} '
                        f'--fastqs {all_fastqs_run} '
                        f'--transcriptome {ARGDICT["cr_count_reference"]} '
-                       f'--no-bam')
+                       f'--no-bam ')
+            if "cr_count_chemistry" in ARGDICT:
+                command += (f'--chemistry {ARGDICT["cr_count_chemistry"]} ')
+            if "cr_count_forcecells" in ARGDICT:
+                command += (f'--force cells {ARGDICT["cr_count_forcecells"]} ')        
             print(command)
             subprocess.call(command, shell=True)
             
