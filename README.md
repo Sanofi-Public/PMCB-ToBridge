@@ -35,7 +35,7 @@ Want to quickly convert your binary base call (BCL) to FASTQs, run [FastQC](http
 
 This simple command (given that you have the Docker image built or pulled) will do the trick:
 
-```docker run -it -v /root/workdir/:/data:z tobridge.v0.1.0 tobridge --bcl_convert --cr_count```
+```docker run -it -v /root/workdir/:/data:z tobridge.current_version tobridge --bcl_convert --cr_count```
 
 **Important:** this will run in your working directory (in this case */root/workdir*). Your BCL files and the corresponding SampleSheet.csv must be (within the working directory) in the directory called *input_bcl* and your reference genome must be in the directory called *cr_count_reference*. If you have a 10X-formatted sample sheet, please also include the flag ```--bcl_convert_sheet_conv```. For cellranger count, you can start by downloading the pre-built reference genomes from [10x](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) as tar archives. The FASTQ files will end up in the *input_fastq* folder (named as such because they will be used as inputs to the alignment.
 
@@ -43,10 +43,12 @@ This simple command (given that you have the Docker image built or pulled) will 
 Additionally, ToBridge supports BCL conversion using [cellranger mkfastq](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/mkfastq), which is slower (but comes with 10x support) and alignment using [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md), which is considerably faster than cellranger count, but does not come with 10x support and requires more information to run. To run mkfastq, use the ```--cr_mkfastq``` flag. To run STARsolo, you should know the correct chemistry, for example,  ```--star_solo --star_solo_chem SC3Pv3``` for Single Cell 3' v3. Reference genome will need to be in the *star_solo_reference* directory and should only include the STAR indices. For your convenience, we provide an option to build your own reference genome with the flag ```--star_solo_genome_generate``` based on user-provided *genome.fa* and *genes.gtf*, both of which need to be placed in the *star_solo_reference_template* directory. If in doubt, you can obtain these two files from the Cell Ranger reference build!
 
 ## Feature barcode analysis with Cell Ranger
-We have incorporated the ability to analyze feature barcodes with [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis). Simply place your *feature_ref.csv* in the working directory, your library file CSVs in the *library_files* directory, and provide the flag ```cr_count_feature```.
+We have incorporated the ability to analyze feature barcodes with [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis). Simply place your *feature_ref.csv* in the working directory, your library file CSVs in the *library_files* directory, and provide the flag ```--cr_count_feature```.
 
 ## Additional Options
-You can provide additional FASTQ files in the *input_fastq* folder. Since the same library is often sequenced multiple times, we have included the ability to align multiple rounds of sequencing. These FASTQ files can provided in the folder directly or in subfolders within (for example, you can place two sets of FASTQs in folders *previous_fastq1* and *previous_fastq2*, and place them in the *input_fastq* folder. Additionally, if you would only like to align a select number of samples for the time being, you can provide an argument e.g, ```--samp S1,S5```
+You can provide additional FASTQ files in the *input_fastq* folder. Since the same library is often sequenced multiple times, we have included the ability to align multiple rounds of sequencing. For example, you can place two sets of previously convereted FASTQ files in folders *previous_fastq1* and *previous_fastq2*, and place them in the *input_fastq* folder. Moreover, you can combine BCL conversion of a new sequencing run with previously converted FASTQ files.
+
+If you would only like to align a select number of samples for the time being, you can provide an argument e.g, ```--samp S1,S5```
 
 ## Docker
 A public Docker image will be provided. For now, please note that you will have to download some of the files yourself since 10X and Illumina require a login and provide a different key each time. Please refer to the Dockerfile for more details.
