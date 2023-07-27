@@ -346,11 +346,17 @@ if "cr_count" in ARGDICT or "cr_count_feature" in ARGDICT:
                 os.mkdir(f'/data/cr_count_organized_output/cellbridge_input/{sample}')
             shutil.copy2(f'{indira}/outs/filtered_feature_bc_matrix.h5',
                          f'/data/cr_count_organized_output/cellbridge_input/{sample}/filtered_feature_bc_matrix.h5')
-            in_sampl = pd.concat([in_sampl, pd.read_csv(
-                f'{indira}/outs/metrics_summary.csv', header=0)])
-    in_sampl.index = final_samples
-    in_sampl.index.name = 'Sample'
-    in_sampl.to_csv('/data/cr_count_organized_output/metrics.csv')
+            in_sample_res = pd.read_csv(
+                f'{indira}/outs/metrics_summary.csv', header=0)
+            in_sample_res.index = [sample]
+            in_sampl = pd.concat([in_sampl, in_sample_res])
+    if os.path.isfile('/data/cr_count_organized_output/metrics.csv'):
+        outfile = pd.concat([pd.read_csv('/data/cr_count_organized_output/metrics.csv',
+                                                   header=0, index_col=0), in_sampl])    
+        outfile.to_csv('/data/cr_count_organized_output/metrics.csv')
+    else:
+        in_sampl.index.name = 'Sample'
+        in_sampl.to_csv('/data/cr_count_organized_output/metrics.csv')
 
 #STARSolo genome generate
 if "star_solo_genome_generate" in ARGDICT:
