@@ -109,6 +109,7 @@ RUN ln /opt/tobridge/Base.py /usr/local/bin/tobridge
 #can be skipped if not needed
 RUN mkdir -p /opt/tobridge/more_python
 ADD index_csvs /opt/tobridge/index_csvs
+COPY base_functions.py /opt/tobridge/more_python/base_functions.py
 COPY convert_sample_sheet.py /opt/tobridge/more_python/convert_sample_sheet.py
 ENV PYTHONPATH="/opt/tobridge/more_python:${PYTHONPATH}"
 
