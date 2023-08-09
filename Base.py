@@ -41,6 +41,8 @@ PARSER.add_argument("--star_solo_genome_generate", action='store_true', required
 
 PARSER.add_argument("--cr_count", required=False, action='store_true', default=False,
                     help="Path to cellranger input")
+PARSER.add_argument("--cr_genome_generate", required=False,
+                    help="Provide a name for new reference genome")
 PARSER.add_argument("--cr_count_chemistry", required=False,
                     help="Specify chemistry if cannot be detected automatically")
 PARSER.add_argument("--cr_count_forcecells", required=False,
@@ -78,9 +80,9 @@ os.environ['PATH'] += os.pathsep + os.pathsep.join([PACKAGES['star_path']])
 
 ARGDICT = {}
 ARGDICT["input"] = []
-
-if os.path.isdir("/data/cr_count_reference"):
-    ARGDICT["cr_count_reference"] = "/data/cr_count_reference"
+    
+if os.path.isdir("/data/cr_count_reference_template"):    
+    ARGDICT["cr_count_reference_template"] = "/data/cr_count_reference_template"
     
 if os.path.isdir("/data/star_solo_reference_template"):    
     ARGDICT["star_solo_reference_template"] = "/data/star_solo_reference_template"
@@ -118,6 +120,13 @@ if ARGIES.fastqc:
 if ARGIES.cr_count:
     ARGDICT["cr_count"] = ARGIES.cr_count
     
+if ARGIES.cr_genome_generate:
+    ARGDICT["cr_genome_generate"] = ARGIES.cr_genome_generate
+    if "cr_count_reference_template" not in ARGDICT:
+        sys.exit("Directory cr_count_reference_template "
+                 "containing genome.fa and genes.gtf "
+                 "is NOT present. Cannot make reference for Cellranger.")
+
 if ARGIES.cr_count_chemistry:
     ARGDICT["cr_count_chemistry"] = ARGIES.cr_count_chemistry
 
@@ -126,10 +135,6 @@ if ARGIES.cr_count_forcecells:
     
 if ARGIES.cr_count_feature:
     ARGDICT["cr_count_feature"] = ARGIES.cr_count_feature
-
-if ("cr_count" in ARGDICT or "cr_count_feature" in ARGDICT) and "cr_count_reference" not in ARGDICT:
-    sys.exit("please provide a reference genome \
-             for cellranger count in the cr_count_reference directory")
     
 if ARGIES.star_solo:
     ARGDICT["star_solo"] = ARGIES.star_solo
@@ -172,19 +177,30 @@ if __name__ == "__main__":
     if os.path.isdir('/data/input_fastq/'):
         check_subfolders = glob.glob('/data/input_fastq/*/')
         if len(check_subfolders) > 0:
-            ARGDICT["input"] += check_subfolders     
+            ARGDICT["input"] += check_subfolders
+            
+    if "cr_genome_generate" in ARGDICT:
+        print("CREATING CR COUNT REFERENCE GENOME")
+        bf.run_crmkref(ARGDICT)
+        
+    if os.path.isdir("/data/cr_count_reference"):
+        ARGDICT["cr_count_reference"] = "/data/cr_count_reference"
     
     # actually run cellranger
-    if "cr_count" in ARGDICT or "cr_count_feature" in ARGDICT:
+    if ("cr_count" in ARGDICT or "cr_count_feature" in ARGDICT) and "cr_count_reference" in ARGDICT:
         print("RUNNING CELLRANGER COUNT (CR) AND ORGANIZING OUTPUT")
-        bf.run_crcount(ARGDICT, PACKAGES)
+        bf.run_crcount(ARGDICT)
+    elif ("cr_count" in ARGDICT or "cr_count_feature" in ARGDICT) and "cr_count_reference" not in ARGDICT:
+        sys.exit("please provide a reference genome \
+                 for cellranger count in the cr_count_reference directory")
      
     #STARSolo genome generate
     if "star_solo_genome_generate" in ARGDICT:
+        print("CREATING STAR SOLO REFERENCE GENOME")
         bf.starsolo_mkref(ARGDICT)
     
     # define the reference dirs
-    if os.path.isdir("/data/star_solo_reference"):    
+    if os.path.isdir("/data/star_solo_reference"):
         ARGDICT["star_solo_reference"] = "/data/star_solo_reference"
     
     # quick check
@@ -195,6 +211,6 @@ if __name__ == "__main__":
     #STARSolo
     if "star_solo" in ARGDICT:
         print("RUNNING STAR SOLO AND ORGANIZING OUTPUT")
-        bf.run_starsolo(ARGDICT, PACKAGES)
+        bf.run_starsolo(ARGDICT)
       
  #############################################################################

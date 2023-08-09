@@ -113,7 +113,82 @@ def run_bclconvert(ARGDICT):
             print("RUNNING FASTQC")
             run_fastqc(ARGDICT, dirra_name)
 
+
+def parse_fasta(file_path):
+    '''parse a FASTA file'''
+    sequences = {}
+    current_id = None
+    current_seq = ""
+
+    with open(file_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith(">"):
+                if current_id is not None:
+                    sequences[current_id] = current_seq
+                current_id = line[1:]
+                current_seq = ""
+            else:
+                current_seq += line
+
+        if current_id is not None and current_seq:
+            sequences[current_id] = current_seq
+
+    return sequences
+
+
+def run_crmkref(ARGDICT):
+    '''make a reference genome for cell ranger'''
+
+    if not os.path.isfile(f'{ARGDICT["cr_count_reference_template"]}/genome.fa'):
+        sys.exit('please include genome.fa in the cr_count_reference_template directory!')
+    if not os.path.isfile(f'{ARGDICT["cr_count_reference_template"]}/genes.gtf'):
+        sys.exit('please include genes.gtf in the cr_count_reference_template directory!')
+        
+    # Example usage:
+    original_gtf = f'{ARGDICT["cr_count_reference_template"]}/genes.gtf'
+    gtf_seq = 'GENE\tunknown\texon\t1\tTOTALLEN\t.\t+\t.\tgene_id "GENE"; transcript_id "GENE"; gene_name "GENE"; gene_biotype "protein_coding";\n'
+    
+    original_fasta = f'{ARGDICT["cr_count_reference_template"]}/genome.fa'  # Replace this with the path to your FASTA file
+    additional_fasta = f'{ARGDICT["cr_count_reference_template"]}/add.fa'  # Replace this with the path to your FASTA file
+    
+    if os.path.isfile(additional_fasta):
+        
+        print('incorporating additional sequences')
+    
+        mod_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
+        mod_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        
+        shutil.copy2(f'{original_gtf}', f'{mod_gtf}')
+        shutil.copy2(f'{original_fasta}', f'{mod_fasta}')
+        
+        sequences_dict = parse_fasta(additional_fasta)
+        
+        for gene in sequences_dict:
+            gtf_out = gtf_seq.replace('GENE', gene)
+            gtf_out = gtf_out.replace('TOTALLEN', f'{len(sequences_dict[gene])}')
+            fasta_out = f'>{gene}\n{sequences_dict[gene]}\n'
+            with open(mod_fasta, "a") as fasta_append:
+                fasta_append.write(fasta_out)
+            with open(mod_gtf, "a") as gtf_append:
+                gtf_append.write(gtf_out)
                 
+    os.chdir('/data/cr_count_reference_template/')
+            
+    command = (f'cellranger mkref  '
+               f'--genome {ARGDICT["cr_genome_generate"]} '
+               f'--fasta {mod_fasta} '
+               f'--genes {mod_gtf}')
+    
+    subprocess.call(command, shell=True)
+    shutil.copytree(f'/data/cr_count_reference_template/{ARGDICT["cr_genome_generate"]}',
+                     '/data/cr_count_reference')
+    os.chdir('/data')
+    
+
 def organize_crcount(ARGDICT, samples):
     '''organize crcount output'''
     # COMBINE OUTPUT INTO READABLE FORMAT INCL CELLBRIDGE INPUT
@@ -154,7 +229,7 @@ def organize_crcount(ARGDICT, samples):
         in_sampl.to_csv('/data/cr_count_organized_output/metrics.csv')
 
 
-def run_crcount(ARGDICT, PACKAGES):
+def run_crcount(ARGDICT):
     '''runs cellranger count'''
     # cellranger count
         
@@ -179,7 +254,7 @@ def run_crcount(ARGDICT, PACKAGES):
         print('all fastqs run', all_fastqs_run)
 
         for sample in samples:
-            command = (f'{PACKAGES["cellranger"] }/cellranger count '
+            command = (f'cellranger count '
                        f'--id {sample} '
                        f'--sample {sample} '
                        f'--fastqs {all_fastqs_run} '
@@ -202,7 +277,7 @@ def run_crcount(ARGDICT, PACKAGES):
         samples = []
         for lib_file in libraries:
             sample = lib_file.split('/')[-1].split('.')[0]
-            command =  (f'{PACKAGES["cellranger"] }/cellranger count '
+            command =  (f'cellranger count '
                         f'--id {sample} '
                         f'--libraries {lib_file} '
                         f'--feature-ref /data/feature_ref.csv '
@@ -224,11 +299,40 @@ def starsolo_mkref(ARGDICT):
         sys.exit('please include genome.fa in the star_solo_genome_generate directory!')
     if not os.path.isfile(f'{ARGDICT["star_solo_reference_template"]}/genes.gtf'):
         sys.exit('please include genes.gtf in the star_solo_reference_template directory!')
+        
+    # Example usage:
+    original_gtf = f'{ARGDICT["star_solo_reference_template"]}/genes.gtf'
+    gtf_seq = 'GENE\tunknown\texon\t1\tTOTALLEN\t.\t+\t.\tgene_id "GENE"; transcript_id "GENE"; gene_name "GENE"; gene_biotype "protein_coding";\n'
+    
+    original_fasta = f'{ARGDICT["star_solo_reference_template"]}/genome.fa'  # Replace this with the path to your FASTA file
+    additional_fasta = f'{ARGDICT["star_solo_reference_template"]}/add.fa'  # Replace this with the path to your FASTA file
+    
+    if os.path.isfile(additional_fasta):
+        
+        print('incorporating additional sequences')
+    
+        mod_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
+        mod_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        
+        shutil.copy2(f'{original_gtf}', f'{mod_gtf}')
+        shutil.copy2(f'{original_fasta}', f'{mod_fasta}')
+        
+        sequences_dict = parse_fasta(additional_fasta)
+        
+        for gene in sequences_dict:
+            gtf_out = gtf_seq.replace('GENE', gene)
+            gtf_out = gtf_out.replace('TOTALLEN', f'{len(sequences_dict[gene])}')
+            fasta_out = f'>{gene}\n{sequences_dict[gene]}\n'
+            with open(mod_fasta, "a") as fasta_append:
+                fasta_append.write(fasta_out)
+            with open(mod_gtf, "a") as gtf_append:
+                gtf_append.write(gtf_out)
+               
     command = (f'STAR --runMode genomeGenerate ' 
                f'--runThreadN {ARGDICT["nthreads"]} '
                f'--genomeDir /data/star_solo_reference '
-               f'--genomeFastaFiles {ARGDICT["star_solo_reference_template"]}/genome.fa '
-               f'--sjdbGTFfile {ARGDICT["star_solo_reference_template"]}/genes.gtf ')
+               f'--genomeFastaFiles {mod_fasta} '
+               f'--sjdbGTFfile {mod_gtf} ')
     subprocess.call(command, shell=True)
     print("REFERENCE GENOME FOR STAR SOLO CREATED SUCCESSFULLY")
 
@@ -299,7 +403,7 @@ def organize_starsolo_output(ARGDICT, samples):
     in_sampl.to_csv('/data/STAR_organized_output/metrics.csv')
     
 
-def run_starsolo(ARGDICT, PACKAGES):
+def run_starsolo(ARGDICT):
     '''this function runs STARSolo'''
 
     if not os.path.isdir('/data/STAR_output'):
@@ -333,7 +437,7 @@ def run_starsolo(ARGDICT, PACKAGES):
         
         if namey in starsolo_fastq_info:
         
-            command = (f'{PACKAGES["star_path"]}/STAR \
+            command = (f'STAR \
             --runThreadN {ARGDICT["nthreads"]} \
             --genomeDir {ARGDICT["star_solo_reference"]} \
             --readFilesIn {starsolo_fastq_info[namey]["R2"]} {starsolo_fastq_info[namey]["R1"]} \
