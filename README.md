@@ -46,6 +46,9 @@ Additionally, ToBridge supports BCL conversion using [cellranger mkfastq](https:
 
 Reference genome will need to be in the *star_solo_reference* directory and should only include the STAR indices. For your convenience, we provide an option to build your own reference genome with the flag ```--star_solo_genome_generate``` based on user-provided *genome.fa* and *genes.gtf*, both of which need to be placed in the *star_solo_reference_template* directory. If in doubt, you can obtain these two files from the Cell Ranger reference build!
 
+## Custom reference genomes
+You can build your own reference genome by putting your custom *genome.fa* and *genes.gtf* in the *star_solo_reference_template* for STAR Solo and in the *cr_count_reference_template* directory for Cell Ranger. Since it's tedious to edit the GTF, we have introduced a way to do it automatically by simply adding *add.fa* with the desired sequences to the folder(s). The *add.fa* file should be a standard FASTA file with the sequences you would like to add to your reference genome specified by *genome.fa* and *genes.gtf* in the + orientation (i.e. please reverse-complement beforehand them if needed). The pipeline will automatically update both the *genome.fa* and *genes.gtf* based on *add.fa* prior to generating a new reference genome.
+
 ## Feature barcode analysis with Cell Ranger
 We have incorporated the ability to analyze feature barcodes with [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis). Simply place your *feature_ref.csv* in the working directory, your library file CSVs in the *library_files* directory, and provide the flag ```--cr_count_feature```.
 
