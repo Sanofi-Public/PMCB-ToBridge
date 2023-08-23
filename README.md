@@ -37,7 +37,7 @@ This simple command (given that you have the Docker image built or pulled) will 
 
 ```docker run -it -v /root/workdir/:/data:z <docker_image_name> tobridge --bcl_convert --cr_count```
 
-**Important Part 1** a public Docker is provided. Please see the Docker section below.
+**Important, Part 1:** a public pre-built Docker image is provided! Please see the Docker section below.
 
 **Important, Part 2:** this will run in your working directory (in this case */root/workdir*). Your BCL files and the corresponding SampleSheet.csv must be (within the working directory) in the directory called *input_bcl* and your reference genome must be in the directory called *cr_count_reference*. If you have a 10X-formatted sample sheet, please also include the flag ```--bcl_convert_sheet_conv```. For cellranger count, you can start by downloading the pre-built reference genomes from [10x](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) as tar archives. The FASTQ files will end up in the *input_fastq* folder (named as such because they will be used as inputs to the alignment.
 
