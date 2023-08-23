@@ -35,9 +35,11 @@ Want to quickly convert your binary base call (BCL) to FASTQs, run [FastQC](http
 
 This simple command (given that you have the Docker image built or pulled) will do the trick:
 
-```docker run -it -v /root/workdir/:/data:z tobridge.current_version tobridge --bcl_convert --cr_count```
+```docker run -it -v /root/workdir/:/data:z <docker_image_name> tobridge --bcl_convert --cr_count```
 
-**Important:** this will run in your working directory (in this case */root/workdir*). Your BCL files and the corresponding SampleSheet.csv must be (within the working directory) in the directory called *input_bcl* and your reference genome must be in the directory called *cr_count_reference*. If you have a 10X-formatted sample sheet, please also include the flag ```--bcl_convert_sheet_conv```. For cellranger count, you can start by downloading the pre-built reference genomes from [10x](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) as tar archives. The FASTQ files will end up in the *input_fastq* folder (named as such because they will be used as inputs to the alignment.
+**Important Part 1** a public Docker is provided. Please see the Docker section below.
+
+**Important, Part 2:** this will run in your working directory (in this case */root/workdir*). Your BCL files and the corresponding SampleSheet.csv must be (within the working directory) in the directory called *input_bcl* and your reference genome must be in the directory called *cr_count_reference*. If you have a 10X-formatted sample sheet, please also include the flag ```--bcl_convert_sheet_conv```. For cellranger count, you can start by downloading the pre-built reference genomes from [10x](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) as tar archives. The FASTQ files will end up in the *input_fastq* folder (named as such because they will be used as inputs to the alignment.
 
 The raw output will be in the *cr_count_output* directory while a more readable and organized output will be placed in the *cr_count_organized_output* directory.
 
@@ -58,7 +60,13 @@ You can provide additional FASTQ files in the *input_fastq* folder. Since the sa
 If you would only like to align a select number of samples for the time being, you can provide an argument e.g, ```--samp S1,S5```
 
 ## Docker
-A public Docker image will be provided. For now, please note that you will have to download some of the files yourself since 10X and Illumina require a login and provide a different key each time. Please refer to the Dockerfile for more details.
+If you would like to build the package from scratch, please note that you will have to download some of the files yourself since 10X and Illumina require a login and provide a different key each time. Please refer to the Dockerfile for more details. A public Docker image of this pipeline is temporarily (i.e. until it finds a more permanent home) available from one of the developers' Docker repos by running:
+
+```docker pull kurlovs/cellbridge:tobridge.v0.2.3```
+
+To use this public Docker image after pulling it, specify its name in the command. For example:
+
+```docker run -it -v /root/workdir/:/data:z kurlovs/cellbridge:tobridge.v0.2.3 tobridge --bcl_convert --bcl_convert_sheet_conv --cr_count```
 
 ## Contact
 For help and questions please contact the [cellbridge's maintenance team](mailto:nima.nouri@sanofi.com).
