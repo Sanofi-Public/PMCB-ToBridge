@@ -27,7 +27,7 @@ PARSER.add_argument("--bcl_convert", required=False, action='store_true', defaul
 PARSER.add_argument("--bcl_convert_sheet_conv", required=False, action='store_true', default=False,
                     help="Convert sample sheet to use BCL convert")
 
-PARSER.add_argument("--fastqc", required=False, action='store_true', default=True,
+PARSER.add_argument("--fastqc", required=False, action='store_true', default=False,
                     help="Run FASTQC")
 
 PARSER.add_argument("--star_solo", required=False, action='store_true', default=False,
@@ -172,6 +172,13 @@ if __name__ == "__main__":
     if "bcl_convert" in ARGDICT:
         print("RUNNING BCL CONVERT")
         bf.run_bclconvert(ARGDICT)
+    
+    if "fastqc" in ARGDICT:
+        check_subfolders = glob.glob('/data/input_fastq/*/')
+        if len(check_subfolders) > 0:
+            bf.run_fastqc(ARGDICT)
+        else:
+            print('Fastq folders not found. Will not perform FastQC')
       
     # redefine input after potentially converting bcl to fastq
     if os.path.isdir('/data/input_fastq/'):

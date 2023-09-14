@@ -17,17 +17,19 @@ import pandas as pd
 
 ########################## TESTING STARTS HERE ############################
 
-def run_fastqc(ARGDICT, dirra_name):
+def run_fastqc(ARGDICT):
     '''FASTQC on nascnet FASTQ files'''
     if not os.path.isdir('/data/fastqc_output'):
         os.mkdir('/data/fastqc_output')
-    if not os.path.isdir(f'/data/fastqc_output/{dirra_name}'):
-        os.mkdir(f'/data/fastqc_output/{dirra_name}')
-    fastqs_path = glob.glob(f'/data/input_fastq/{dirra_name}/*.fastq.gz')
-    fastqs_relevant_path = sorted([i for i in fastqs_path if "_R" in i])
-    fastqs_command = " ".join(fastqs_relevant_path)
-    command = f'fastqc {fastqs_command} --outdir /data/fastqc_output/{dirra_name} --threads {ARGDICT["nthreads"]}'
-    subprocess.call(command, shell=True)
+    for dirra in glob.glob('/data/input_fastq/*/'):
+        dirra_name = dirra.split('/')[-2]
+        if not os.path.isdir(f'/data/fastqc_output/{dirra_name}'):
+            os.mkdir(f'/data/fastqc_output/{dirra_name}')
+        fastqs_path = glob.glob(f'/data/input_fastq/{dirra_name}/*.fastq.gz')
+        fastqs_relevant_path = sorted([i for i in fastqs_path if "_R" in i])
+        fastqs_command = " ".join(fastqs_relevant_path)
+        command = f'fastqc {fastqs_command} --outdir /data/fastqc_output/{dirra_name} --threads {ARGDICT["nthreads"]}'
+        subprocess.call(command, shell=True)
 
 
 def run_crfastq(ARGDICT):
@@ -55,17 +57,13 @@ def run_crfastq(ARGDICT):
         if not os.path.isdir(f'/data/input_fastq/{dirra_name}'):
             os.mkdir(f'/data/input_fastq/{dirra_name}')
         outfolders = glob.glob(f'/data/bcl_conversion/{dirra_name}/outs/fastq_path/*/')
-        print("iutfolders", outfolders)
+        print("outfolders", outfolders)
         flowcell_folder = [i for i in outfolders if i.split('/')[-2] != "Stats" and i.split('/')[-2] != 'Reports'][0]
         print(flowcell_folder)
         fastq_output = glob.glob(f'{flowcell_folder}/*.fastq.gz')
         print(fastq_output)
         for fastq in fastq_output:
             shutil.move(f'{fastq}', f'/data/input_fastq/{dirra_name}')
-        #FASTqc 
-        if "fastqc" in ARGDICT:
-            print("RUNNING FASTQC")
-            run_fastqc(ARGDICT, dirra_name)
     os.chdir('/data')
 
 
@@ -108,10 +106,6 @@ def run_bclconvert(ARGDICT):
         for fastq in fastq_output:
             if "Undetermined" not in fastq:
                 shutil.move(f'{fastq}', f'/data/input_fastq/{dirra_name}')
-        #FASTqc 
-        if "fastqc" in ARGDICT:
-            print("RUNNING FASTQC")
-            run_fastqc(ARGDICT, dirra_name)
 
 
 def parse_fasta(file_path):
@@ -154,16 +148,20 @@ def run_crmkref(ARGDICT):
     
     original_fasta = f'{ARGDICT["cr_count_reference_template"]}/genome.fa'  # Replace this with the path to your FASTA file
     additional_fasta = f'{ARGDICT["cr_count_reference_template"]}/add.fa'  # Replace this with the path to your FASTA file
+
+    #unless genome is getting modified, the originals are the finals
+    final_fasta = original_fasta
+    final_gtf = original_gtf
     
     if os.path.isfile(additional_fasta):
         
         print('incorporating additional sequences')
     
-        mod_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
-        mod_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        final_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
+        final_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
         
-        shutil.copy2(f'{original_gtf}', f'{mod_gtf}')
-        shutil.copy2(f'{original_fasta}', f'{mod_fasta}')
+        shutil.copy2(f'{original_gtf}', f'{final_gtf}')
+        shutil.copy2(f'{original_fasta}', f'{final_fasta}')
         
         sequences_dict = parse_fasta(additional_fasta)
         
@@ -171,17 +169,17 @@ def run_crmkref(ARGDICT):
             gtf_out = gtf_seq.replace('GENE', gene)
             gtf_out = gtf_out.replace('TOTALLEN', f'{len(sequences_dict[gene])}')
             fasta_out = f'>{gene}\n{sequences_dict[gene]}\n'
-            with open(mod_fasta, "a") as fasta_append:
+            with open(final_fasta, "a") as fasta_append:
                 fasta_append.write(fasta_out)
-            with open(mod_gtf, "a") as gtf_append:
+            with open(final_gtf, "a") as gtf_append:
                 gtf_append.write(gtf_out)
                 
     os.chdir('/data/cr_count_reference_template/')
             
     command = (f'cellranger mkref  '
                f'--genome {ARGDICT["cr_genome_generate"]} '
-               f'--fasta {mod_fasta} '
-               f'--genes {mod_gtf}')
+               f'--fasta {final_fasta} '
+               f'--genes {final_gtf}')
     
     subprocess.call(command, shell=True)
     shutil.copytree(f'/data/cr_count_reference_template/{ARGDICT["cr_genome_generate"]}',
@@ -307,15 +305,19 @@ def starsolo_mkref(ARGDICT):
     original_fasta = f'{ARGDICT["star_solo_reference_template"]}/genome.fa'  # Replace this with the path to your FASTA file
     additional_fasta = f'{ARGDICT["star_solo_reference_template"]}/add.fa'  # Replace this with the path to your FASTA file
     
+    # unless modification takes place, the finals are the originals
+    final_fasta = original_fasta
+    final_gtf = original_gtf
+    
     if os.path.isfile(additional_fasta):
         
         print('incorporating additional sequences')
     
-        mod_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
-        mod_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        final_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
+        final_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
         
-        shutil.copy2(f'{original_gtf}', f'{mod_gtf}')
-        shutil.copy2(f'{original_fasta}', f'{mod_fasta}')
+        shutil.copy2(f'{original_gtf}', f'{final_gtf}')
+        shutil.copy2(f'{original_fasta}', f'{final_fasta}')
         
         sequences_dict = parse_fasta(additional_fasta)
         
@@ -323,16 +325,16 @@ def starsolo_mkref(ARGDICT):
             gtf_out = gtf_seq.replace('GENE', gene)
             gtf_out = gtf_out.replace('TOTALLEN', f'{len(sequences_dict[gene])}')
             fasta_out = f'>{gene}\n{sequences_dict[gene]}\n'
-            with open(mod_fasta, "a") as fasta_append:
+            with open(final_fasta, "a") as fasta_append:
                 fasta_append.write(fasta_out)
-            with open(mod_gtf, "a") as gtf_append:
+            with open(final_gtf, "a") as gtf_append:
                 gtf_append.write(gtf_out)
                
     command = (f'STAR --runMode genomeGenerate ' 
                f'--runThreadN {ARGDICT["nthreads"]} '
                f'--genomeDir /data/star_solo_reference '
-               f'--genomeFastaFiles {mod_fasta} '
-               f'--sjdbGTFfile {mod_gtf} ')
+               f'--genomeFastaFiles {final_fasta} '
+               f'--sjdbGTFfile {final_gtf} ')
     subprocess.call(command, shell=True)
     print("REFERENCE GENOME FOR STAR SOLO CREATED SUCCESSFULLY")
 
