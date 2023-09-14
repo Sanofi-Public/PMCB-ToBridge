@@ -62,11 +62,11 @@ If you would only like to align a select number of samples for the time being, y
 ## Docker
 If you would like to build the package from scratch, please note that you will have to download some of the files yourself since 10X and Illumina require a login and provide a different key each time. Please refer to the Dockerfile for more details. A public Docker image of this pipeline is temporarily (i.e. until it finds a more permanent home) available from one of the developers' Docker repos by running:
 
-```docker pull kurlovs/cellbridge:tobridge.v0.2.3```
+```docker pull kurlovs/cellbridge:tobridge.v0.2.4```
 
 To use this public Docker image after pulling it, specify its name in the command. For example:
 
-```docker run -it -v /root/workdir/:/data:z kurlovs/cellbridge:tobridge.v0.2.3 tobridge --bcl_convert --bcl_convert_sheet_conv --cr_count```
+```docker run -it -v /root/workdir/:/data:z kurlovs/cellbridge:tobridge.v0.2.4 tobridge --bcl_convert --bcl_convert_sheet_conv --cr_count```
 
 ## Contact
 For help and questions please contact the [cellbridge's maintenance team](mailto:nima.nouri@sanofi.com).
