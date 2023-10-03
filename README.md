@@ -96,6 +96,7 @@ workdir
 <br>
 Place the ```genome.fa``` and ```genes.gtf``` in the ```cr_count_reference_template``` folder (Note: this is will also work if you place them into the ```star_solo_reference_template``` folder for STARsolo), and your BCLs/FASTQs into the appropriate folders:
 </br>
+
 ```
 workdir
 ├── input_bcl
