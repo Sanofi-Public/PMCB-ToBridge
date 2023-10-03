@@ -61,7 +61,7 @@ Which folders you include depends on your specific case. Some examples (from sim
 ### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
 <br>
 Place the reference genome in the ```cr_count_reference``` folder, and your BCLs into the approproate folders:
-</br>
+<br>
 ```
 workdir
 ├── input_bcl
@@ -73,7 +73,7 @@ workdir
 ### I have FASTQs from two sequencing runs and I want to get count matrices using STARsolo.
 <br>
 Place the reference genome in the ```star_solo_reference``` folder, and your BCLs into the approproate folders:
-</br>
+<br>
 
 ```
 workdir
@@ -95,7 +95,7 @@ workdir
 ### However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
 <br>
 Place the ```genome.fa``` and ```genes.gtf``` in the ```cr_count_reference_template``` folder (Note: this is will also work if you place them into the ```star_solo_reference_template``` folder for STARsolo), and your BCLs/FASTQs into the appropriate folders:
-</br>
+<br>
 
 ```
 workdir
