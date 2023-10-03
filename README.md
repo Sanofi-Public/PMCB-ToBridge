@@ -34,7 +34,7 @@ processing of the data.
 <details>
 <br>
 
-The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named workdir (but can be named whatever you would like).
+The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named ```workdir``` (but can be named whatever you would like).
 
 ```
 workdir
@@ -59,8 +59,9 @@ workdir
 Which folders you include depends on your specific case. Some examples (from simpler to more complex) are included below:
 
 ### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
-
-Place the reference genome in the cr_count_reference_template folder, and your BCLs into the approproate folders:
+<br>
+Place the reference genome in the ```cr_count_reference``` folder, and your BCLs into the approproate folders:
+</br>
 ```
 workdir
 ├── input_bcl
@@ -70,6 +71,9 @@ workdir
 ```
 
 ### I have FASTQs from two sequencing runs and I want to get count matrices using STARsolo.
+<br>
+Place the reference genome in the ```star_solo_reference``` folder, and your BCLs into the approproate folders:
+</br>
 
 ```
 workdir
@@ -89,7 +93,9 @@ workdir
 
 ### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using Cellranger.
 ### However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
-
+<br>
+Place the ```genome.fa``` and ```genes.gtf``` in the ```cr_count_reference_template``` folder (Note: this is will also work if you place them into the ```star_solo_reference_template``` folder for STARsolo), and your BCLs/FASTQs into the appropriate folders:
+</br>
 ```
 workdir
 ├── input_bcl
@@ -100,15 +106,31 @@ workdir
 │        ├── S1_S1_L001_R1_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
-├── cr_count_reference_template
-│   ├── genome.fa
-│   └── genes.gtf
-
-
+└── cr_count_reference_template
+    ├── genome.fa
+    ├── genes.gtf
+    └── add.fa
 ```
 
+The ```add.fa``` file should be a simple FASTA file, for example (and as per Cell Ranger):
 
-
+```
+>GFP
+TACACACGAATAAAAGATAACAAAGATGAGTAAAGGAGAAGAACTTTTCACTGGAGTTGTCCCAATTCTT
+GTTGAATTAGATGGCGATGTTAATGGGCAAAAATTCTCTGTCAGTGGAGAGGGTGAAGGTGATGCAACAT
+ACGGAAAACTTACCCTTAAATTTATTTGCACTACTGGGAAGCTACCTGTTCCATGGCCAACACTTGTCAC
+TACTTTCTCTTATGGTGTTCAATGCTTTTCAAGATACCCAGATCATATGAAACAGCATGACTTTTTCAAG
+AGTGCCATGCCCGAAGGTTATGTACAGGAAAGAACTATATTTTACAAAGATGACGGGAACTACAAGACAC
+GTGCTGAAGTCAAGTTTGAAGGTGATACCCTTGTTAATAGAATCGAGTTAAAAGGTATTGATTTTAAAGA
+AGATGGAAACATTCTTGGACACAAAATGGAATACAACTATAACTCACATAATGTATACATCATGGCAGAC
+AAACCAAAGAATGGAATCAAAGTTAACTTCAAAATTAGACACAACATTAAAGATGGAAGCGTTCAATTAG
+CAGACCATTATCAACAAAATACTCCAATTGGCGATGGCCCTGTCCTTTTACCAGACAACCATTACCTGTC
+CACACAATCTGCCCTTTCCAAAGATCCCAACGAAAAGAGAGATCACATGATCCTTCTTGAGTTTGTAACA
+GCTGCTGGGATTACACATGGCATGGATGAACTATACAAATAAATGTCCAGACTTCCAATTGACACTAAAG
+TGTCCGAACAATTACTAAATTCTCAGGGTTCCTGGTTAAATTCAGGCTGAGACTTTATTTATATATTTAT
+AGATTCATTAAAATTTTATGAATAATTTATTGATGTTATTAATAGGGGCTATTTTCTTATTAAATAGGCT
+ACTGGAGTGTAT
+```
 
 </details>
 
