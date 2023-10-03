@@ -36,6 +36,7 @@ processing of the data.
 
 The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named workdir (but can be named whatever you would like).
 
+```
 workdir
 ├── input_bcl
 │   ├── <run_id>
@@ -53,21 +54,24 @@ workdir
 │   └── genes.gtf
 ├── library_files 
 └── feature_ref.csv
+```
 
 Which folders you include depends on your specific case. Some examples (from simpler to more complex) are included below:
 
 ### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
 
 Place the reference genome in the cr_count_reference_template folder, and your BCLs into the approproate folders:
-
+```
 workdir
 ├── input_bcl
 │   ├── <run_id>
 │   └── <run_id>
 └── cr_count_reference
+```
 
 ### I have FASTQs from two sequencing runs and I want to get count matrices using STARsolo.
 
+```
 workdir
 ├── input_fastq
 │   ├── <run_id>
@@ -81,10 +85,12 @@ workdir
 │        ├── S2_S2_L001_R1_001.fastq.gz
 │        └── S2_S2_L001_R1_001.fastq.gz
 └── star_solo_reference
+```
 
 ### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using Cellranger.
 ### However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
 
+```
 workdir
 ├── input_bcl
 │   └── <run_id>
@@ -99,7 +105,7 @@ workdir
 │   └── genes.gtf
 
 
-
+```
 
 
 
