@@ -175,3 +175,46 @@ and place them in the ```library_files``` directory.
 
 ---
 
+## Perform QC
+
+<details>
+<br>
+
+The pipeline is equipped to run [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on FASTQ files by using the flag ```--fastqc```
+
+</details>
+
+---
+
+## Contact
+
+<details>
+<br>
+
+For help and questions please contact the [cellbridge's maintenance team](mailto:nima.nouri@sanofi.com).
+
+</details>
+
+---
+
+## Citing CellBridge
+
+<details>
+<br>
+
+If you use CellBridge please cite our paper: 
+
+```
+  @Article{,
+    author = {Nima Nouri and Andre H. Kurlovs, et al.},
+    title = {Scaling up Single-Cell RNA-seq Data Analysis with CellBridge Workflow},
+    journal = {Journal},
+    year = {2023},
+    url = {URL},
+    doi = {DOI},
+  }
+```
+</details>
+
+
+
