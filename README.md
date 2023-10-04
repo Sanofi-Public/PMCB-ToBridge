@@ -34,9 +34,10 @@ processing of the data.
 <details>
 
 The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named ```workdir``` (but can be named whatever you'd like).
+How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number.
 
 ```
-workdir
+data
 ├── input_bcl
 │   ├── <run_id>
 │   └── <run_id>
@@ -55,14 +56,12 @@ workdir
 └── feature_ref.csv
 ```
 
-Which folders you include depends on your specific case. Some examples (from simpler to more complex) are included below:
-
 ### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
 
 Place the reference genome in the ```cr_count_reference``` folder, and your BCLs into the appropriate folders:
 
 ```
-workdir
+data
 ├── input_bcl
 │   ├── <run_id>
 │   └── <run_id>
@@ -74,36 +73,35 @@ workdir
 Place the reference genome in the ```star_solo_reference``` folder, and your BCLs into the appropriate folders:
 
 ```
-workdir
+data
 ├── input_fastq
 │   ├── <run_id>
 │   │    ├── S1_S1_L001_R1_001.fastq.gz
-│   │    ├── S1_S1_L001_R1_001.fastq.gz
+│   │    ├── S1_S1_L001_R2_001.fastq.gz
 │   │    ├── S2_S2_L001_R1_001.fastq.gz
-│   │    └── S2_S2_L001_R1_001.fastq.gz
+│   │    └── S2_S2_L001_R2_001.fastq.gz
 │   └── <run_id>
 │        ├── S1_S1_L001_R1_001.fastq.gz
-│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
-│        └── S2_S2_L001_R1_001.fastq.gz
+│        └── S2_S2_L001_R2_001.fastq.gz
 └── star_solo_reference
 ```
 
-### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using Cellranger.
-### However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
+### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using Cellranger. However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
 
 Place the ```genome.fa``` and ```genes.gtf``` in the ```cr_count_reference_template``` folder (Note: this is will also work if you place them into the ```star_solo_reference_template``` folder for STARsolo), and your BCLs/FASTQs into the appropriate folders:
 
 ```
-workdir
+data
 ├── input_bcl
 │   └── <run_id>
 ├── input_fastq
 │   └── <run_id>
 │        ├── S1_S1_L001_R1_001.fastq.gz
-│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
-│        └── S2_S2_L001_R1_001.fastq.gz
+│        └── S2_S2_L001_R2_001.fastq.gz
 └── cr_count_reference_template
     ├── genome.fa
     ├── genes.gtf
@@ -129,6 +127,49 @@ TGTCCGAACAATTACTAAATTCTCAGGGTTCCTGGTTAAATTCAGGCTGAGACTTTATTTATATATTTAT
 AGATTCATTAAAATTTTATGAATAATTTATTGATGTTATTAATAGGGGCTATTTTCTTATTAAATAGGCT
 ACTGGAGTGTAT
 ```
+
+### I have FASTQs of CITE-seq data that I would like to process using Cell Ranger.
+
+Place the reference genome in the ```cr_count_reference``` folder, and your FASTQs into the appropriate folder. 
+Include the feature reference sequences in  ```feature_ref.csv``` as per [Cell Ranger instructions](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis), and place your sample descriptions in the ```library_files``` folder (more on this below):
+
+```
+data
+├── input_fastq
+│   └── <run_id>
+│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
+│        ├── S2_S2_L001_R1_001.fastq.gz
+│        ├── S2_S2_L001_R2_001.fastq.gz
+│        ├── S3_S3_L001_R1_001.fastq.gz
+│        ├── S3_S3_L001_R2_001.fastq.gz
+│        ├── S4_S4_L001_R1_001.fastq.gz
+│        └── S4_S4_L001_R2_001.fastq.gz
+├── cr_count_reference
+├── library_files 
+└── feature_ref.csv
+```
+
+Format your ```library_files``` as per [Cell Ranger instructions](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
+For example, if S1 and S2 come from your antibody capture libraries and S3 and S4 come from the corresponding gene expression libraries, you would make two files as follows:
+
+```S3_S1.csv```:
+
+```
+fastqs,sample,library_type
+/data/input_fastq/<run_id>,S1,Antibody Capture
+/data/input_fastq/<run_id>,S3,Gene Expression
+```
+
+```S4_S2.csv```:
+
+```
+fastqs,sample,library_type
+/data/input_fastq/<run_id>,S2,Antibody Capture
+/data/input_fastq/<run_id>,S4,Gene Expression
+```
+
+and place them in the ```library_files``` directory.
 
 </details>
 
