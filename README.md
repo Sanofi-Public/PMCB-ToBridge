@@ -77,10 +77,10 @@ Place the reference genome in the ```star_solo_reference``` folder, and your BCL
 workdir
 ├── input_fastq
 │   ├── <run_id>
-│        ├── S1_S1_L001_R1_001.fastq.gz
-│        ├── S1_S1_L001_R1_001.fastq.gz
-│        ├── S2_S2_L001_R1_001.fastq.gz
-│        └── S2_S2_L001_R1_001.fastq.gz
+│   │    ├── S1_S1_L001_R1_001.fastq.gz
+│   │    ├── S1_S1_L001_R1_001.fastq.gz
+│   │    ├── S2_S2_L001_R1_001.fastq.gz
+│   │    └── S2_S2_L001_R1_001.fastq.gz
 │   └── <run_id>
 │        ├── S1_S1_L001_R1_001.fastq.gz
 │        ├── S1_S1_L001_R1_001.fastq.gz
@@ -103,7 +103,7 @@ workdir
 │        ├── S1_S1_L001_R1_001.fastq.gz
 │        ├── S1_S1_L001_R1_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
-│        ├── S2_S2_L001_R1_001.fastq.gz
+│        └── S2_S2_L001_R1_001.fastq.gz
 └── cr_count_reference_template
     ├── genome.fa
     ├── genes.gtf
