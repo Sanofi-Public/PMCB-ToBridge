@@ -20,8 +20,7 @@ accurate cell type annotation. CellBridge provides convenient parameterization
 of the workflow, while its Docker-based framework ensures reproducibility of
 results across diverse computing environments. 
 
-See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
-processing steps.
+The CellBridge ecosystem comprises two main executables: 1) `tobridge` for pre-processing and 2) `cellbridge` for processing. Please see [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) Github page for the processing step of the data.
 
 <p align="center" width="100%">
 <img width="85%" src="./pipeline_schematic.png"> 
@@ -194,7 +193,7 @@ docker pull pmcbscb/tobridge
 docker pull pmcbscb/cellbridge
 ```
 
-Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+Note: Please see [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
 processing steps.
 
 </details>
@@ -220,7 +219,7 @@ For detailed information about the available flag options, refer
 to our up-to-date HTML manual:
 [tobridge-flags](http://htmlpreview.github.io/?https://github.com/Sanofi-Public/PMCB-ToBridge/blob/master/tobridge_flags.html)
 
-Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+Note: Please see [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
 processing steps.
 
 </details>
@@ -259,17 +258,24 @@ tar -zxvf cr_count_reference/refdata-gex-GRCh38-2020-A.tar.gz -C cr_count_refere
 
 #### Execute workflows
 
-Assuming the images have already been pulled (see 'Docker Images' above):
+Assuming the images have already been pulled (see 'Docker Images' above), run
+the pre-processing pipeline which perform `fastqc` and `cellranger count`:
 
-```
+``` 
 docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
                                            --fastqc \
                                            --cr_count 
 ```
+
+Move to `cellbridge_input` directory and download the `metadata`:
+
 ```
-cd cr_count_organized_output/cellbridge_input
+cd cr_count_organized_output/cellbridge && \
 wget https://raw.githubusercontent.com/Sanofi-Public/PMCB-CellBridge/master/demo/metadata.csv 
 ```
+
+Run the processing pipeline with the basic flags:
+
 ``` 
 docker run -v ${PWD}:/data:z pmcbscb/cellbridge:latest cellbridge \
                                            --project project-demo \
@@ -284,8 +290,8 @@ argument. There is one available mount points defined in the container named
 `data`. In the example above the current directory `${PWD}` was used and not an
 absolute notation. If you intended to pass a host directory, use absolute path.
 
-Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
-processing steps.
+Note: for details about the processing step, please visit the
+[CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) GitHub page.
 
 </details>
 
@@ -296,38 +302,16 @@ processing steps.
 <details>
 <br>
 
-The <b>entire</b> pipeline produces one `outputs` folder containing three files,
-each of which is tagged by a 15-character unique identifier (UI).
-
-1) An HTML report (`<project_name>_cellbridge_v<x.y.z>_<UI>_summary.html`),
-containing quality metric plots, tables, and several other plots providing an
-overal view of the scRNA-seq data analysis outcomes. 
-2) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_final-object.rds`) 
-containing the final seurat object with all accosiated metadata and miscellaneous 
-information.
-3) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_middle-object.rds`)
-containing all intermediate files required to repreduce the html summary.
-
-CellBridge generates a unique identifier (UID) for all three output files. The
-UID is a 15-character alphanumeric code (consisting of upper and lower-case
-letters and numbers) that is assigned to all three output files and projected on
-the HTML summary report. The UID serves as a tracking mechanism for the data in
-case the same dataset is processed multiple times with different input
-parameters. The UID ensures that the output files can be easily identified and
-distinguished, allowing investigators to easily trace their analysis and results
-back to the specific run and set of parameters used and minimizing confusion and
-errors in data management.
-
-However, the <b>pre-processing</b>  part of the pipeline (i.e. ToBridge) has its own outputs worth mentioning:
+The <b>pre-processing</b> part of the pipeline (i.e. ToBridge) has the following output structure:
 
 ```
 data
 ├── STAR_organized_output
-│   ├── cellbridge_input
+│   ├── cellbridge
 │   └── metrics.csv
 ├── STAR_output
 ├── cr_count_organized_output
-│   ├── cellbridge_input
+│   ├── cellbridge
 │   ├── loupe_files
 │   ├── web_summaries
 │   └── metrics.csv
@@ -337,12 +321,15 @@ data
 
 While some of these are self-explanatory, others call for additional clarification.
 
-```cellbridge_input``` directories have the folder structure ready to be plugged into the main portion of the pipeline.
+```cellbridge``` directories have the folder structure ready to be plugged into the main portion of the pipeline.
 
 In ```cr_count_organized_output```, Loupe files and web summaries are grouped together for all the samples, and ```metrics.csv``` has the metrics for all the samples in the same file.
 Ditto for ```STAR_organized_output``` with respect to ```metrics.csv```.
 
 Raw STARsolo outputs and Cell Ranger outputs are found in ```STAR_output``` and ```cr_count_output```, respectively.
+
+Note: for outputs of the processing step, please visit
+[CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) Github page."
 
 </details>
 
