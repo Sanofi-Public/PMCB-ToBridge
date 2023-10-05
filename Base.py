@@ -20,42 +20,43 @@ PARSER = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter)
 
 PARSER.add_argument("--cr_mkfastq", required=False, action='store_true', default=False,
-                    help="Run cellranger make fastq")
+                    help="Run cellranger make fastq; make sure SampleSheet.csv is in your BCL folders")
 
 PARSER.add_argument("--bcl_convert", required=False, action='store_true', default=False,
-                    help="Run BCL convert")
+                    help="Run BCL convert; make sure SampleSheet.csv is in your BCL folders")
 PARSER.add_argument("--bcl_convert_sheet_conv", required=False, action='store_true', default=False,
-                    help="Convert sample sheet to use BCL convert")
+                    help="Convert sample sheet to use BCL convert; use this flag if you have a 10x-style sample sheet")
 
 PARSER.add_argument("--fastqc", required=False, action='store_true', default=False,
                     help="Run FASTQC")
 
 PARSER.add_argument("--star_solo", required=False, action='store_true', default=False,
-                    help="Path to STAR Solo input")
+                    help="Run STARsolo")
 PARSER.add_argument("--star_solo_chem", required=False, 
-                    help="What is the chemistry?")
+                    help="What is the sample chemistry?")
 PARSER.add_argument("--star_solo_features", required=False, default="GeneFull_Ex50pAS",
-                    help="Quantification of different features")
-PARSER.add_argument("--star_solo_genome_generate", action='store_true', required=False, 
-                    help="Generate a ref genome")
+                    help=("Quantification of different features; currently GeneFull_Ex50pAS (closest to CellRanger) "
+                          "and SJ (splicing analysis) have been tested. You can use them together as 'GeneFull_Ex50pAS SJ'"))
+PARSER.add_argument("--star_solo_genome_generate", action='store_true', required=False,
+                    help="Generate a ref genome for STARsolo")
 
 PARSER.add_argument("--cr_count", required=False, action='store_true', default=False,
-                    help="Path to cellranger input")
+                    help="Run cellranger count")
 PARSER.add_argument("--cr_genome_generate", required=False,
-                    help="Provide a name for new reference genome")
+                    help="Provide a name for new cellranger reference genome")
 PARSER.add_argument("--cr_count_chemistry", required=False,
-                    help="Specify chemistry if cannot be detected automatically")
+                    help="Specify chemistry for cellranger if cannot be detected automatically (rare)")
 PARSER.add_argument("--cr_count_forcecells", required=False,
-                    help="Force a certain number of cells")
+                    help="Force a certain number of cells for cellranger count")
 
 PARSER.add_argument("--cr_count_feature", required=False, action='store_true', default=False,
-                    help="Feature bacrode assay")
+                    help="Feature bacrode assay using cellranger")
 
 PARSER.add_argument("--samp", required=False, default="All",
-                    help="If you only want cellranger run on specific samples, use this flag")
+                    help="If you only want cellranger run on specific samples, use this flag, e.g. --samp S1,S5")
 
 PARSER.add_argument("--nthreads", required=False, default=multiprocessing.cpu_count()-1,
-                    help="Number of threads")
+                    help="Number of threads; defaults to all minus 1")
 
 # PACKAGES
 PACKAGES = {}

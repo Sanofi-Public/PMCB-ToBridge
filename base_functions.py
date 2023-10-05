@@ -59,7 +59,8 @@ def run_crfastq(ARGDICT):
         outfolders = glob.glob(f'/data/bcl_conversion/{dirra_name}/outs/fastq_path/*/')
         print("outfolders", outfolders)
         flowcell_folder = [i for i in outfolders if i.split('/')[-2] != "Stats" and i.split('/')[-2] != 'Reports'][0]
-        print(flowcell_folder)
+        if len(flowcell_folder) == 0:
+            sys.exit('conversion did not take place successfully')
         fastq_output = glob.glob(f'{flowcell_folder}/*.fastq.gz')
         print(fastq_output)
         for fastq in fastq_output:
@@ -242,7 +243,7 @@ def run_crcount(ARGDICT):
             all_fastqs = [glob.glob(f'{locale}/*.fastq.gz')
                           for locale in ARGDICT["input"]]
             all_fastqs = [item for sublist in all_fastqs for item in sublist]
-            samples = sorted(set([i.split('/')[-1].split('_')[0] for i in all_fastqs]))
+            samples = sorted(set([i.split('/')[-1].split('_S')[0] for i in all_fastqs]))
         else:
             samples = ARGDICT["samp"]
         
@@ -344,7 +345,7 @@ def get_fastq_info(infiles):
     infiles_sorted = {}
     for filey in infiles:
         filename = filey.split('/')[-1]
-        name = filename.split('_')[0]
+        name = filename.split('_S')[0]
         if name not in infiles_sorted:
             infiles_sorted[name] = {}
             infiles_sorted[name]['R2'] = []
@@ -361,6 +362,16 @@ def get_fastq_info(infiles):
 
 def organize_starsolo_output(ARGDICT, samples):
     '''organizes STARSolo output into readable format'''
+    
+    if 'SJ' in ARGDICT['star_solo_features']:
+        # fix broken symlinks
+        for tabfile in glob.glob('/data/STAR_output/*SJ.out.tab'):
+            outdir=tabfile.split('SJ.out.tab')[0]+'Solo.out'
+            os.remove(f'{outdir}/SJ/raw/features.tsv')
+            shutil.copy2(tabfile, f'{outdir}/SJ/raw/features.tsv')
+    
+    if 'GeneFull_Ex50pAS' not in ARGDICT['star_solo_features']:
+        sys.exit('only GeneFull_Ex50pAS gets organization')
         
     if not os.path.isdir('/data/STAR_organized_output'):
         os.mkdir('/data/STAR_organized_output')
@@ -376,25 +387,25 @@ def organize_starsolo_output(ARGDICT, samples):
         sample_old = indira.split('/')[-2]
         sample_new = sample_old.split('Solo.out')[0]
         print(f'processing {sample_new}')
-        if os.path.isfile(f'{indira}/{ARGDICT["star_solo_features"]}/Summary.csv'):
+        if os.path.isfile(f'{indira}/GeneFull_Ex50pAS/Summary.csv'):
             
             if not os.path.isdir(f'/data/STAR_organized_output/cellbridge_input/{sample_new}'):
                 os.mkdir(f'/data/STAR_organized_output/cellbridge_input/{sample_new}')
                 
-            in_mtx = f'{indira}/{ARGDICT["star_solo_features"]}/filtered/matrix.mtx'
+            in_mtx = f'{indira}/GeneFull_Ex50pAS/filtered/matrix.mtx'
             out_mtx = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/matrix.mtx.gz'
             with open(in_mtx, 'rb') as f_in, gzip.open(out_mtx, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
-            in_feat = f'{indira}/{ARGDICT["star_solo_features"]}/filtered/features.tsv'
+            in_feat = f'{indira}/GeneFull_Ex50pAS/filtered/features.tsv'
             out_feat = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/features.tsv.gz'
             with open(in_feat, 'rb') as f_in, gzip.open(out_feat, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
-            in_bar = f'{indira}/{ARGDICT["star_solo_features"]}/filtered/barcodes.tsv'
+            in_bar = f'{indira}/GeneFull_Ex50pAS/filtered/barcodes.tsv'
             out_bar = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/barcodes.tsv.gz'
             with open(in_bar, 'rb') as f_in, gzip.open(out_bar, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
                   
-            overview = pd.read_csv(f'{indira}/{ARGDICT["star_solo_features"]}/Summary.csv',
+            overview = pd.read_csv(f'{indira}/GeneFull_Ex50pAS/Summary.csv',
                                index_col=0, header=None)
             overview.columns = [sample_new]
             overview = overview.T
