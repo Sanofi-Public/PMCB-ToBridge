@@ -194,8 +194,8 @@ def organize_crcount(ARGDICT, samples):
     print("ORGANIZING CR OUTPUT")
     if not os.path.isdir('/data/cr_count_organized_output'):
         os.mkdir('/data/cr_count_organized_output')
-    if not os.path.isdir('/data/cr_count_organized_output/cellbridge_input'):
-        os.mkdir('/data/cr_count_organized_output/cellbridge_input')
+    if not os.path.isdir('/data/cr_count_organized_output/cellbridge'):
+        os.mkdir('/data/cr_count_organized_output/cellbridge')
     if not os.path.isdir('/data/cr_count_organized_output/loupe_files'):
         os.mkdir('/data/cr_count_organized_output/loupe_files')
     if not os.path.isdir('/data/cr_count_organized_output/web_summaries'):
@@ -211,10 +211,10 @@ def organize_crcount(ARGDICT, samples):
                          f'/data/cr_count_organized_output/web_summaries/{sample}_web_summary.html')
             shutil.copy2(f'{indira}/outs/cloupe.cloupe',
                          f'/data/cr_count_organized_output/loupe_files/{sample}_cloupe.cloupe')
-            if not os.path.isdir(f'/data/cr_count_organized_output/cellbridge_input/{sample}'):
-                os.mkdir(f'/data/cr_count_organized_output/cellbridge_input/{sample}')
+            if not os.path.isdir(f'/data/cr_count_organized_output/cellbridge/{sample}'):
+                os.mkdir(f'/data/cr_count_organized_output/cellbridge/{sample}')
             shutil.copy2(f'{indira}/outs/filtered_feature_bc_matrix.h5',
-                         f'/data/cr_count_organized_output/cellbridge_input/{sample}/filtered_feature_bc_matrix.h5')
+                         f'/data/cr_count_organized_output/cellbridge/{sample}/filtered_feature_bc_matrix.h5')
             in_sample_res = pd.read_csv(
                 f'{indira}/outs/metrics_summary.csv', header=0)
             in_sample_res.index = [sample]
@@ -376,8 +376,8 @@ def organize_starsolo_output(ARGDICT, samples):
     if not os.path.isdir('/data/STAR_organized_output'):
         os.mkdir('/data/STAR_organized_output')
         
-    if not os.path.isdir('/data/STAR_organized_output/cellbridge_input'):
-        os.mkdir('/data/STAR_organized_output/cellbridge_input')
+    if not os.path.isdir('/data/STAR_organized_output/cellbridge'):
+        os.mkdir('/data/STAR_organized_output/cellbridge')
         
     indirs_star = [i for i in glob.glob('/data/STAR_output/*/') if i.split('/')[-2].split('Solo.out')[0] in samples]
     
@@ -389,19 +389,19 @@ def organize_starsolo_output(ARGDICT, samples):
         print(f'processing {sample_new}')
         if os.path.isfile(f'{indira}/GeneFull_Ex50pAS/Summary.csv'):
             
-            if not os.path.isdir(f'/data/STAR_organized_output/cellbridge_input/{sample_new}'):
-                os.mkdir(f'/data/STAR_organized_output/cellbridge_input/{sample_new}')
+            if not os.path.isdir(f'/data/STAR_organized_output/cellbridge/{sample_new}'):
+                os.mkdir(f'/data/STAR_organized_output/cellbridge/{sample_new}')
                 
             in_mtx = f'{indira}/GeneFull_Ex50pAS/filtered/matrix.mtx'
-            out_mtx = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/matrix.mtx.gz'
+            out_mtx = f'/data/STAR_organized_output/cellbridge/{sample_new}/matrix.mtx.gz'
             with open(in_mtx, 'rb') as f_in, gzip.open(out_mtx, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
             in_feat = f'{indira}/GeneFull_Ex50pAS/filtered/features.tsv'
-            out_feat = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/features.tsv.gz'
+            out_feat = f'/data/STAR_organized_output/cellbridge/{sample_new}/features.tsv.gz'
             with open(in_feat, 'rb') as f_in, gzip.open(out_feat, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
             in_bar = f'{indira}/GeneFull_Ex50pAS/filtered/barcodes.tsv'
-            out_bar = f'/data/STAR_organized_output/cellbridge_input/{sample_new}/barcodes.tsv.gz'
+            out_bar = f'/data/STAR_organized_output/cellbridge/{sample_new}/barcodes.tsv.gz'
             with open(in_bar, 'rb') as f_in, gzip.open(out_bar, 'wb', compresslevel=6) as f_out:
                   f_out.write(f_in.read())
                   
