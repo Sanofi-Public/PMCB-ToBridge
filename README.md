@@ -21,7 +21,7 @@ of the workflow, while its Docker-based framework ensures reproducibility of
 results across diverse computing environments. 
 
 See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
-processing steps of the data.
+processing steps.
 
 <p align="center" width="100%">
 <img width="85%" src="./pipeline_schematic.png"> 
@@ -175,6 +175,55 @@ and place them in the ```library_files``` directory.
 
 ---
 
+## Docker Images
+
+<details>
+<br>
+
+The pre-built images are available in the `pmcbscb` (Precision Medicine and
+Computational Biology – Single Cell Biology) Docker Hub repository. They can be
+seamlessly pulled by:
+
+```
+docker pull pmcbscb/tobridge
+```
+```
+docker pull pmcbscb/cellbridge
+```
+
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
+
+</details>
+
+---
+
+## Flag Options
+
+<details>
+<br>
+
+The extensive documentation for flag options is embedded within the workflows.
+For a review of the flags, please execute:
+
+```
+docker run pmcbscb/tobridge tobridge --help
+```
+```
+docker run pmcbscb/cellbridge cellbridge --help
+```
+
+For detailed information about the available flag options, refer
+to our up-to-date HTML manual:
+[tobridge-flags](http://htmlpreview.github.io/?https://github.com/Sanofi-Public/PMCB-ToBridge/blob/readme-revisions/tobridge_flags.html)
+
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
+
+</details>
+
+---
+
 ## Demo Workflow
 
 <details>
@@ -209,10 +258,10 @@ tar -zxvf cr_count_reference/refdata-gex-GRCh38-2020-A.tar.gz -C cr_count_refere
 
 Assuming the images have already been pulled (see 'Docker Images' above):
 
-``` 
+```
 docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
-                                                --fastqc \ 
-                                                --cr_count
+                                           --fastqc \
+                                           --cr_count 
 ```
 ```
 cd cr_count_organized_output/cellbridge_input
@@ -232,8 +281,8 @@ argument. There is one available mount points defined in the container named
 `data`. In the example above the current directory `${PWD}` was used and not an
 absolute notation. If you intended to pass a host directory, use absolute path.
 
-Note: for details about processing steps, visit the main
-[CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) Github page.
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
 
 </details>
 
@@ -244,7 +293,7 @@ Note: for details about processing steps, visit the main
 <details>
 <br>
 
-As a result, the *entire* pipeline produces one `outputs` folder containing three files,
+The <b>entire</b> pipeline produces one `outputs` folder containing three files,
 each of which is tagged by a 15-character unique identifier (UI).
 
 1) An HTML report (`<project_name>_cellbridge_v<x.y.z>_<UI>_summary.html`),
