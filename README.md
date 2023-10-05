@@ -20,8 +20,8 @@ accurate cell type annotation. CellBridge provides convenient parameterization
 of the workflow, while its Docker-based framework ensures reproducibility of
 results across diverse computing environments. 
 
-See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the
-processing of the data.
+See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps of the data.
 
 <p align="center" width="100%">
 <img width="85%" src="./pipeline_schematic.png"> 
@@ -34,7 +34,7 @@ processing of the data.
 <details>
 
 The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named ```workdir``` (but can be named whatever you'd like).
-How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number.
+How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number. Each BCL folder should contain a ```SampleSheet.csv```
 
 ```
 data
@@ -170,6 +170,127 @@ fastqs,sample,library_type
 ```
 
 and place them in the ```library_files``` directory.
+
+</details>
+
+---
+
+## Demo Workflow
+
+<details>
+<br>
+
+#### Get fastq demo files
+
+Users can download FASTQ files from one of the publicly-available data sets on
+the 10x Genomics support site. This example uses the 1,000 PBMC data set from
+human peripheral blood mononuclear cells (PBMC), consisting of lymphocytes (T
+cells, B cell, and NK kills) and monocytes. Please copy and paste the following
+instructions into the terminal:
+
+``` 
+mkdir sandbox && cd sandbox && \
+mkdir -p input_fastq/run_1 && \
+wget -P input_fastq/run_1 https://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_fastqs.tar && \
+tar -xvf input_fastq/run_1/pbmc_1k_v3_fastqs.tar -C input_fastq/run_1 --strip-components=1
+```
+
+#### Get the reference transcriptome and metadata
+
+The following command lines set up the required data structure to run the workflow:
+
+``` 
+mkdir cr_count_reference && \
+wget -P cr_count_reference https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2020-A.tar.gz && \
+tar -zxvf cr_count_reference/refdata-gex-GRCh38-2020-A.tar.gz -C cr_count_reference --strip-components=1
+```
+
+#### Execute workflows
+
+Assuming the images have already been pulled (see 'Docker Images' above):
+
+``` 
+docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
+                                                --fastqc \ 
+                                                --cr_count
+```
+```
+cd cr_count_organized_output/cellbridge_input
+wget https://raw.githubusercontent.com/Sanofi-Public/PMCB-CellBridge/master/demo/metadata.csv 
+```
+``` 
+docker run -v ${PWD}:/data:z pmcbscb/cellbridge:latest cellbridge \
+                                           --project project-demo \
+                                           --species hs \
+                                           --tissue pbmc \
+                                           --metadata sample_based
+```
+
+Note: sharing files between the host operating system and the container requires
+you to bind a directory on the host to the container mount points using the `-v`
+argument. There is one available mount points defined in the container named
+`data`. In the example above the current directory `${PWD}` was used and not an
+absolute notation. If you intended to pass a host directory, use absolute path.
+
+Note: for details about processing steps, visit the main
+[CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) Github page.
+
+</details>
+
+---
+
+## Workflow Outputs
+
+<details>
+<br>
+
+As a result, the *entire* pipeline produces one `outputs` folder containing three files,
+each of which is tagged by a 15-character unique identifier (UI).
+
+1) An HTML report (`<project_name>_cellbridge_v<x.y.z>_<UI>_summary.html`),
+containing quality metric plots, tables, and several other plots providing an
+overal view of the scRNA-seq data analysis outcomes. 
+2) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_final-object.rds`) 
+containing the final seurat object with all accosiated metadata and miscellaneous 
+information.
+3) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_middle-object.rds`)
+containing all intermediate files required to repreduce the html summary.
+
+CellBridge generates a unique identifier (UID) for all three output files. The
+UID is a 15-character alphanumeric code (consisting of upper and lower-case
+letters and numbers) that is assigned to all three output files and projected on
+the HTML summary report. The UID serves as a tracking mechanism for the data in
+case the same dataset is processed multiple times with different input
+parameters. The UID ensures that the output files can be easily identified and
+distinguished, allowing investigators to easily trace their analysis and results
+back to the specific run and set of parameters used and minimizing confusion and
+errors in data management.
+
+However, that the <b>pre-processing</b>  part of the pipeline has its own outputs worth mentioning:
+
+```
+data
+├── STAR_organized_output
+│   ├── cellbridge_input
+│   └── metrics.csv
+├── STAR_output
+├── cr_count_organized_output
+│   ├── cellbridge_input
+│   ├── loupe_files
+│   ├── web_summaries
+│   └── metrics.csv
+├── cr_count_output
+└── fastqc_output
+```
+
+While some of these are self-explanatory, others call for additional clarification.
+
+```cellbridge_input``` directories have the folder structure ready to be plugged into the main portion of the pipeline.
+
+In ```cr_count_organized_output```, Loupe files and web summaries are grouped together for all the samples, and ```metrics.csv``` has the metrics for all the samples in the same file.
+Ditto for ```STAR_organized_output``` with respect to ```metrics.csv```.
+
+Raw STARsolo outputs and Cell Ranger outputs are found in ``` STAR_output``` and ```cr_count_output```, respectively.
 
 </details>
 
