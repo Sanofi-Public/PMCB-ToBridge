@@ -34,7 +34,10 @@ processing steps.
 <details>
 
 The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named ```workdir``` (but can be named whatever you'd like).
-How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number. Each BCL folder should contain a ```SampleSheet.csv```
+How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number. 
+
+Each BCL folder should contain a ```SampleSheet.csv```. Please refer to [10X](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/mkfastq#simple_csv) if you are in doubt on how to create one.
+
 
 ```
 data
@@ -58,7 +61,7 @@ data
 
 ### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
 
-Place the reference genome in the ```cr_count_reference``` folder, and your BCLs into the appropriate folders:
+Place the Cell Ranger reference genome in the ```cr_count_reference``` folder, and your BCLs into the appropriate folders:
 
 ```
 data
@@ -70,7 +73,7 @@ data
 
 ### I have FASTQs from two sequencing runs and I want to get count matrices using STARsolo.
 
-Place the reference genome in the ```star_solo_reference``` folder, and your BCLs into the appropriate folders:
+Place the STARsolo reference genome in the ```star_solo_reference``` folder, and your BCLs into the appropriate folders:
 
 ```
 data
@@ -88,9 +91,9 @@ data
 └── star_solo_reference
 ```
 
-### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using Cellranger. However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
+### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using STARsolo. However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
 
-Place the ```genome.fa``` and ```genes.gtf``` in the ```cr_count_reference_template``` folder (Note: this is will also work if you place them into the ```star_solo_reference_template``` folder for STARsolo), and your BCLs/FASTQs into the appropriate folders:
+Place the ```genome.fa``` and ```genes.gtf``` files in the ```star_solo_reference_template``` folder (Note: this is will also work if you place them into the ```cr_count_reference_template``` folder for Cell Ranger), and your BCLs/FASTQs into the appropriate folders. If you do not have readily available genome.fa and genes.gtf, you can use ones from a publicly available [10X repository](https://www.10xgenomics.com/support/software/cell-ranger/downloads#reference-downloads). Note that you can create a reference with ```genome.fa``` and ```genes.gtf``` alone; the ```add.fa``` is optional and comes in handy if you want to add sequences to both your genome and the GTF annotation.
 
 ```
 data
@@ -102,13 +105,13 @@ data
 │        ├── S1_S1_L001_R2_001.fastq.gz
 │        ├── S2_S2_L001_R1_001.fastq.gz
 │        └── S2_S2_L001_R2_001.fastq.gz
-└── cr_count_reference_template
+└── star_solo_reference_template
     ├── genome.fa
     ├── genes.gtf
     └── add.fa
 ```
 
-The ```add.fa``` file should be a simple FASTA file, for example (and as per Cell Ranger):
+The ```add.fa``` file should be a simple FASTA file, for example (and as per an example provided by 10X):
 
 ```
 >GFP
@@ -315,7 +318,7 @@ distinguished, allowing investigators to easily trace their analysis and results
 back to the specific run and set of parameters used and minimizing confusion and
 errors in data management.
 
-However, that the <b>pre-processing</b>  part of the pipeline has its own outputs worth mentioning:
+However, the <b>pre-processing</b>  part of the pipeline (i.e. ToBridge) has its own outputs worth mentioning:
 
 ```
 data
