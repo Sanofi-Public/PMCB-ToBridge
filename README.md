@@ -20,8 +20,8 @@ accurate cell type annotation. CellBridge provides convenient parameterization
 of the workflow, while its Docker-based framework ensures reproducibility of
 results across diverse computing environments. 
 
-See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the
-processing of the data.
+See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
 
 <p align="center" width="100%">
 <img width="85%" src="./pipeline_schematic.png"> 
@@ -29,44 +29,365 @@ processing of the data.
 
 ---
 
+## Workflow Inputs
 
-## Quick Start
-Want to quickly convert your binary base call (BCL) to FASTQs, run [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and then align them to your reference genome with [cellranger count](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/count) and get neatly organized output that can be directly analyzed with CellBridge?
+<details>
 
-This simple command (given that you have the Docker image built or pulled) will do the trick:
+The pipeline inputs (and for that matter, outputs) are all contained in single folder, hereafter named ```workdir``` (but can be named whatever you'd like).
+How to name the <run_id> folders is up to you. We recommend using something recognizable like the flow cell number. 
 
-```docker run -it -v /root/workdir/:/data:z <docker_image_name> tobridge --bcl_convert --cr_count```
+Each BCL folder should contain a ```SampleSheet.csv```. Please refer to [10X](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/mkfastq#simple_csv) if you are in doubt on how to create one.
 
-**Important, Part 1:** a public pre-built Docker image is provided! Please see the Docker section below.
 
-**Important, Part 2:** this will run in your working directory (in this case */root/workdir*). Your BCL files and the corresponding SampleSheet.csv must be (within the working directory) in the directory called *input_bcl* and your reference genome must be in the directory called *cr_count_reference*. If you have a 10X-formatted sample sheet, please also include the flag ```--bcl_convert_sheet_conv```. For cellranger count, you can start by downloading the pre-built reference genomes from [10x](https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest) as tar archives. The FASTQ files will end up in the *input_fastq* folder (named as such because they will be used as inputs to the alignment.
+```
+data
+├── input_bcl
+│   ├── <run_id>
+│   └── <run_id>
+├── input_fastq
+│   ├── <run_id>
+│   └── <run_id>
+├── cr_count_reference
+├── star_solo_reference
+├── cr_count_reference_template
+│   ├── genome.fa
+│   └── genes.gtf
+├── star_solo_reference_template
+│   ├── genome.fa
+│   └── genes.gtf
+├── library_files 
+└── feature_ref.csv
+```
 
-The raw output will be in the *cr_count_output* directory while a more readable and organized output will be placed in the *cr_count_organized_output* directory.
+### I have BCLs form two sequencing runs and I want to get count matrices using Cellranger count.
 
-## Cell Ranger's mkfastq and STARsolo
-Additionally, ToBridge supports BCL conversion using [cellranger mkfastq](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/mkfastq), which is slower (but comes with 10x support) and alignment using [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md), which is considerably faster than cellranger count, but does not come with 10x support and requires more information to run. To run mkfastq, use the ```--cr_mkfastq``` flag. To run STARsolo, you should know the correct chemistry, for example,  ```--star_solo --star_solo_chem SC3Pv3``` for Single Cell 3' v3. 
+Place the Cell Ranger reference genome in the ```cr_count_reference``` folder, and your BCLs into the appropriate folders:
 
-Reference genome will need to be in the *star_solo_reference* directory and should only include the STAR indices. For your convenience, we provide an option to build your own reference genome with the flag ```--star_solo_genome_generate``` based on user-provided *genome.fa* and *genes.gtf*, both of which need to be placed in the *star_solo_reference_template* directory. If in doubt, you can obtain these two files from the Cell Ranger reference build!
+```
+data
+├── input_bcl
+│   ├── <run_id>
+│   └── <run_id>
+└── cr_count_reference
+```
 
-## Custom reference genomes
-You can build your own reference genome by putting your custom *genome.fa* and *genes.gtf* in the *star_solo_reference_template* for STAR Solo and in the *cr_count_reference_template* directory for Cell Ranger. Since it's tedious to edit the GTF, we have introduced a way to do it by simply adding *add.fa* to the folder(s). The *add.fa* file should be a standard FASTA file with the sequences you would like to add to your reference genome in the + orientation (i.e. please reverse-complement beforehand them if needed). The pipeline will automatically update both the *genome.fa* and *genes.gtf* based on *add.fa* prior to generating a new reference genome.
+### I have FASTQs from two sequencing runs and I want to get count matrices using STARsolo.
 
-## Feature barcode analysis with Cell Ranger
-We have incorporated the ability to analyze feature barcodes with [Cell Ranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis). Simply place your *feature_ref.csv* in the working directory, your library file CSVs in the *library_files* directory, and provide the flag ```--cr_count_feature```.
+Place the STARsolo reference genome in the ```star_solo_reference``` folder, and your BCLs into the appropriate folders:
 
-## Additional Options
-You can provide additional FASTQ files in the *input_fastq* folder. Since the same library is often sequenced multiple times, we have included the ability to align multiple rounds of sequencing. For example, you can place two sets of previously convereted FASTQ files in folders *previous_fastq1* and *previous_fastq2*, and place them in the *input_fastq* folder. Moreover, you can combine BCL conversion of a new sequencing run with previously converted FASTQ files.
+```
+data
+├── input_fastq
+│   ├── <run_id>
+│   │    ├── S1_S1_L001_R1_001.fastq.gz
+│   │    ├── S1_S1_L001_R2_001.fastq.gz
+│   │    ├── S2_S2_L001_R1_001.fastq.gz
+│   │    └── S2_S2_L001_R2_001.fastq.gz
+│   └── <run_id>
+│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
+│        ├── S2_S2_L001_R1_001.fastq.gz
+│        └── S2_S2_L001_R2_001.fastq.gz
+└── star_solo_reference
+```
 
-If you would only like to align a select number of samples for the time being, you can provide an argument e.g, ```--samp S1,S5```
+### I have BCLs from a new sequencing run, FASTQs from a previous run, and I would like to get count matrices using STARsolo. However, I need to modify the human reference genome with a custom GFP gene used in my experiment.
 
-## Docker
-If you would like to build the package from scratch, please note that you will have to download some of the files yourself since 10X and Illumina require a login and provide a different key each time. Please refer to the Dockerfile for more details. A public Docker image of this pipeline is temporarily (i.e. until it finds a more permanent home) available from one of the developers' Docker repos by running:
+Place the ```genome.fa``` and ```genes.gtf``` files in the ```star_solo_reference_template``` folder (Note: this is will also work if you place them into the ```cr_count_reference_template``` folder for Cell Ranger), and your BCLs/FASTQs into the appropriate folders. If you do not have readily available genome.fa and genes.gtf, you can use ones from a publicly available [10X repository](https://www.10xgenomics.com/support/software/cell-ranger/downloads#reference-downloads). Note that you can create a reference with ```genome.fa``` and ```genes.gtf``` alone; the ```add.fa``` is optional and comes in handy if you want to add sequences to both your genome and the GTF annotation.
 
-```docker pull kurlovs/cellbridge:tobridge.v0.2.4```
+```
+data
+├── input_bcl
+│   └── <run_id>
+├── input_fastq
+│   └── <run_id>
+│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
+│        ├── S2_S2_L001_R1_001.fastq.gz
+│        └── S2_S2_L001_R2_001.fastq.gz
+└── star_solo_reference_template
+    ├── genome.fa
+    ├── genes.gtf
+    └── add.fa
+```
 
-To use this public Docker image after pulling it, specify its name in the command. For example:
+The ```add.fa``` file should be a simple FASTA file, for example (and as per an example provided by 10X):
 
-```docker run -it -v /root/workdir/:/data:z kurlovs/cellbridge:tobridge.v0.2.4 tobridge --bcl_convert --bcl_convert_sheet_conv --cr_count```
+```
+>GFP
+TACACACGAATAAAAGATAACAAAGATGAGTAAAGGAGAAGAACTTTTCACTGGAGTTGTCCCAATTCTT
+GTTGAATTAGATGGCGATGTTAATGGGCAAAAATTCTCTGTCAGTGGAGAGGGTGAAGGTGATGCAACAT
+ACGGAAAACTTACCCTTAAATTTATTTGCACTACTGGGAAGCTACCTGTTCCATGGCCAACACTTGTCAC
+TACTTTCTCTTATGGTGTTCAATGCTTTTCAAGATACCCAGATCATATGAAACAGCATGACTTTTTCAAG
+AGTGCCATGCCCGAAGGTTATGTACAGGAAAGAACTATATTTTACAAAGATGACGGGAACTACAAGACAC
+GTGCTGAAGTCAAGTTTGAAGGTGATACCCTTGTTAATAGAATCGAGTTAAAAGGTATTGATTTTAAAGA
+AGATGGAAACATTCTTGGACACAAAATGGAATACAACTATAACTCACATAATGTATACATCATGGCAGAC
+AAACCAAAGAATGGAATCAAAGTTAACTTCAAAATTAGACACAACATTAAAGATGGAAGCGTTCAATTAG
+CAGACCATTATCAACAAAATACTCCAATTGGCGATGGCCCTGTCCTTTTACCAGACAACCATTACCTGTC
+CACACAATCTGCCCTTTCCAAAGATCCCAACGAAAAGAGAGATCACATGATCCTTCTTGAGTTTGTAACA
+GCTGCTGGGATTACACATGGCATGGATGAACTATACAAATAAATGTCCAGACTTCCAATTGACACTAAAG
+TGTCCGAACAATTACTAAATTCTCAGGGTTCCTGGTTAAATTCAGGCTGAGACTTTATTTATATATTTAT
+AGATTCATTAAAATTTTATGAATAATTTATTGATGTTATTAATAGGGGCTATTTTCTTATTAAATAGGCT
+ACTGGAGTGTAT
+```
+
+### I have FASTQs of CITE-seq data that I would like to process using Cell Ranger.
+
+Place the reference genome in the ```cr_count_reference``` folder, and your FASTQs into the appropriate folder. 
+Include the feature reference sequences in  ```feature_ref.csv``` as per [Cell Ranger instructions](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis), and place your sample descriptions in the ```library_files``` folder (more on this below):
+
+```
+data
+├── input_fastq
+│   └── <run_id>
+│        ├── S1_S1_L001_R1_001.fastq.gz
+│        ├── S1_S1_L001_R2_001.fastq.gz
+│        ├── S2_S2_L001_R1_001.fastq.gz
+│        ├── S2_S2_L001_R2_001.fastq.gz
+│        ├── S3_S3_L001_R1_001.fastq.gz
+│        ├── S3_S3_L001_R2_001.fastq.gz
+│        ├── S4_S4_L001_R1_001.fastq.gz
+│        └── S4_S4_L001_R2_001.fastq.gz
+├── cr_count_reference
+├── library_files 
+└── feature_ref.csv
+```
+
+Format your ```library_files``` as per [Cell Ranger instructions](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
+For example, if S1 and S2 come from your antibody capture libraries and S3 and S4 come from the corresponding gene expression libraries, you would make two files as follows:
+
+```S3_S1.csv```:
+
+```
+fastqs,sample,library_type
+/data/input_fastq/<run_id>,S1,Antibody Capture
+/data/input_fastq/<run_id>,S3,Gene Expression
+```
+
+```S4_S2.csv```:
+
+```
+fastqs,sample,library_type
+/data/input_fastq/<run_id>,S2,Antibody Capture
+/data/input_fastq/<run_id>,S4,Gene Expression
+```
+
+and place them in the ```library_files``` directory.
+
+</details>
+
+---
+
+## Docker Images
+
+<details>
+<br>
+
+The pre-built images are available in the `pmcbscb` (Precision Medicine and
+Computational Biology – Single Cell Biology) Docker Hub repository. They can be
+seamlessly pulled by:
+
+```
+docker pull pmcbscb/tobridge
+```
+```
+docker pull pmcbscb/cellbridge
+```
+
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
+
+</details>
+
+---
+
+## Flag Options
+
+<details>
+<br>
+
+The extensive documentation for flag options is embedded within the workflows.
+For a review of the flags, please execute:
+
+```
+docker run pmcbscb/tobridge tobridge --help
+```
+```
+docker run pmcbscb/cellbridge cellbridge --help
+```
+
+For detailed information about the available flag options, refer
+to our up-to-date HTML manual:
+[tobridge-flags](http://htmlpreview.github.io/?https://github.com/Sanofi-Public/PMCB-ToBridge/blob/readme-revisions/tobridge_flags.html)
+
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
+
+</details>
+
+---
+
+## Demo Workflow
+
+<details>
+<br>
+
+#### Get fastq demo files
+
+Users can download FASTQ files from one of the publicly-available data sets on
+the 10x Genomics support site. This example uses the 1,000 PBMC data set from
+human peripheral blood mononuclear cells (PBMC), consisting of lymphocytes (T
+cells, B cell, and NK kills) and monocytes. Please copy and paste the following
+instructions into the terminal:
+
+``` 
+mkdir sandbox && cd sandbox && \
+mkdir -p input_fastq/run_1 && \
+wget -P input_fastq/run_1 https://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_fastqs.tar && \
+tar -xvf input_fastq/run_1/pbmc_1k_v3_fastqs.tar -C input_fastq/run_1 --strip-components=1
+```
+
+#### Get the reference transcriptome and metadata
+
+The following command lines set up the required data structure to run the workflow:
+
+``` 
+mkdir cr_count_reference && \
+wget -P cr_count_reference https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2020-A.tar.gz && \
+tar -zxvf cr_count_reference/refdata-gex-GRCh38-2020-A.tar.gz -C cr_count_reference --strip-components=1
+```
+
+#### Execute workflows
+
+Assuming the images have already been pulled (see 'Docker Images' above):
+
+```
+docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
+                                           --fastqc \
+                                           --cr_count 
+```
+```
+cd cr_count_organized_output/cellbridge_input
+wget https://raw.githubusercontent.com/Sanofi-Public/PMCB-CellBridge/master/demo/metadata.csv 
+```
+``` 
+docker run -v ${PWD}:/data:z pmcbscb/cellbridge:latest cellbridge \
+                                           --project project-demo \
+                                           --species hs \
+                                           --tissue pbmc \
+                                           --metadata sample_based
+```
+
+Note: sharing files between the host operating system and the container requires
+you to bind a directory on the host to the container mount points using the `-v`
+argument. There is one available mount points defined in the container named
+`data`. In the example above the current directory `${PWD}` was used and not an
+absolute notation. If you intended to pass a host directory, use absolute path.
+
+Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
+processing steps.
+
+</details>
+
+---
+
+## Workflow Outputs
+
+<details>
+<br>
+
+The <b>entire</b> pipeline produces one `outputs` folder containing three files,
+each of which is tagged by a 15-character unique identifier (UI).
+
+1) An HTML report (`<project_name>_cellbridge_v<x.y.z>_<UI>_summary.html`),
+containing quality metric plots, tables, and several other plots providing an
+overal view of the scRNA-seq data analysis outcomes. 
+2) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_final-object.rds`) 
+containing the final seurat object with all accosiated metadata and miscellaneous 
+information.
+3) An RDS object (`<project_name>_cellbridge_v<x.y.z>_<UI>_middle-object.rds`)
+containing all intermediate files required to repreduce the html summary.
+
+CellBridge generates a unique identifier (UID) for all three output files. The
+UID is a 15-character alphanumeric code (consisting of upper and lower-case
+letters and numbers) that is assigned to all three output files and projected on
+the HTML summary report. The UID serves as a tracking mechanism for the data in
+case the same dataset is processed multiple times with different input
+parameters. The UID ensures that the output files can be easily identified and
+distinguished, allowing investigators to easily trace their analysis and results
+back to the specific run and set of parameters used and minimizing confusion and
+errors in data management.
+
+However, the <b>pre-processing</b>  part of the pipeline (i.e. ToBridge) has its own outputs worth mentioning:
+
+```
+data
+├── STAR_organized_output
+│   ├── cellbridge_input
+│   └── metrics.csv
+├── STAR_output
+├── cr_count_organized_output
+│   ├── cellbridge_input
+│   ├── loupe_files
+│   ├── web_summaries
+│   └── metrics.csv
+├── cr_count_output
+└── fastqc_output
+```
+
+While some of these are self-explanatory, others call for additional clarification.
+
+```cellbridge_input``` directories have the folder structure ready to be plugged into the main portion of the pipeline.
+
+In ```cr_count_organized_output```, Loupe files and web summaries are grouped together for all the samples, and ```metrics.csv``` has the metrics for all the samples in the same file.
+Ditto for ```STAR_organized_output``` with respect to ```metrics.csv```.
+
+Raw STARsolo outputs and Cell Ranger outputs are found in ```STAR_output``` and ```cr_count_output```, respectively.
+
+</details>
+
+---
+
+## Perform QC
+
+<details>
+<br>
+
+The pipeline is equipped to run [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on FASTQ files by using the flag ```--fastqc```
+
+</details>
+
+---
 
 ## Contact
+
+<details>
+<br>
+
 For help and questions please contact the [cellbridge's maintenance team](mailto:nima.nouri@sanofi.com).
+
+</details>
+
+---
+
+## Citing CellBridge
+
+<details>
+<br>
+
+If you use CellBridge please cite our paper: 
+
+```
+  @Article{,
+    author = {Nima Nouri and Andre H. Kurlovs, et al.},
+    title = {Scaling up Single-Cell RNA-seq Data Analysis with CellBridge Workflow},
+    journal = {Journal},
+    year = {2023},
+    url = {URL},
+    doi = {DOI},
+  }
+```
+</details>
+
+
+
