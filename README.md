@@ -267,7 +267,7 @@ docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
                                            --cr_count 
 ```
 
-Move to `cellbridge_input` directory and download the `metadata`:
+Move to `cellbridge` directory and download the `metadata`:
 
 ```
 cd cr_count_organized_output/cellbridge && \
