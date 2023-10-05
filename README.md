@@ -290,7 +290,7 @@ While some of these are self-explanatory, others call for additional clarificati
 In ```cr_count_organized_output```, Loupe files and web summaries are grouped together for all the samples, and ```metrics.csv``` has the metrics for all the samples in the same file.
 Ditto for ```STAR_organized_output``` with respect to ```metrics.csv```.
 
-Raw STARsolo outputs and Cell Ranger outputs are found in ``` STAR_output``` and ```cr_count_output```, respectively.
+Raw STARsolo outputs and Cell Ranger outputs are found in ```STAR_output``` and ```cr_count_output```, respectively.
 
 </details>
 
