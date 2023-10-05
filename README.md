@@ -218,7 +218,7 @@ docker run pmcbscb/cellbridge cellbridge --help
 
 For detailed information about the available flag options, refer
 to our up-to-date HTML manual:
-[tobridge-flags](http://htmlpreview.github.io/?https://github.com/Sanofi-Public/PMCB-ToBridge/blob/readme-revisions/tobridge_flags.html)
+[tobridge-flags](http://htmlpreview.github.io/?https://github.com/Sanofi-Public/PMCB-ToBridge/blob/master/tobridge_flags.html)
 
 Note: See [CellBridge](https://github.com/Sanofi-Public/PMCB-CellBridge) for the main
 processing steps.
