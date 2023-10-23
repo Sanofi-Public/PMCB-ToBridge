@@ -221,7 +221,7 @@ def organize_crcount(ARGDICT, samples):
             in_sampl = pd.concat([in_sampl, in_sample_res])
     if os.path.isfile('/data/cr_count_organized_output/metrics.csv'):
         outfile = pd.concat([pd.read_csv('/data/cr_count_organized_output/metrics.csv',
-                                                   header=0, index_col=0), in_sampl])    
+                                                   header=0, index_col=0), in_sampl])
         outfile.to_csv('/data/cr_count_organized_output/metrics.csv')
     else:
         in_sampl.index.name = 'Sample'
@@ -262,7 +262,7 @@ def run_crcount(ARGDICT):
             if "cr_count_chemistry" in ARGDICT:
                 command += (f'--chemistry {ARGDICT["cr_count_chemistry"]} ')
             if "cr_count_forcecells" in ARGDICT:
-                command += (f'--force cells {ARGDICT["cr_count_forcecells"]} ')        
+                command += (f'--force-cells {ARGDICT["cr_count_forcecells"]} ')
             print(command)
             subprocess.call(command, shell=True)
             
@@ -282,6 +282,10 @@ def run_crcount(ARGDICT):
                         f'--feature-ref /data/feature_ref.csv '
                         f'--transcriptome {ARGDICT["cr_count_reference"]} '
                         f'--no-bam')
+            if "cr_count_chemistry" in ARGDICT:
+                command += (f'--chemistry {ARGDICT["cr_count_chemistry"]} ')
+            if "cr_count_forcecells" in ARGDICT:
+                command += (f'--force-cells {ARGDICT["cr_count_forcecells"]} ')
             if ARGDICT["samp"] == "All" or (ARGDICT["samp"] != "All" and sample in ARGDICT["samp"]):
                 samples.append(sample)
                 print(command)

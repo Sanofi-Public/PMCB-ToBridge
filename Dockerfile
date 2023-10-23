@@ -5,7 +5,7 @@ FROM ubuntu:20.04
 # versions -- bcl2fastq2 has reached end of life so version is hard-coded
 ARG DEBIAN_FRONTEND=noninteractive
 ARG STAR_VERSION=2.7.10b
-ARG CELL_RANGER_VERSION=7.1.0
+ARG CELL_RANGER_VERSION=7.2.0
 ARG BCL_CONVERT_VERSION=4.1.5-2.el7
 ARG FASTQC_VERSION=0.12.1
 

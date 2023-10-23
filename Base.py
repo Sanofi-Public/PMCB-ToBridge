@@ -67,7 +67,7 @@ os.environ['PATH'] += os.pathsep + os.pathsep.join([PACKAGES['bcl2fastq']])
 PACKAGES['bcl_convert'] = '/usr/local/bin/bcl-convert'
 os.environ['PATH'] += os.pathsep + os.pathsep.join([PACKAGES['bcl_convert']])
 
-PACKAGES['cellranger'] = '/opt/tobridge/cellranger-7.1.0/bin'
+PACKAGES['cellranger'] = '/opt/tobridge/cellranger-7.2.0/bin'
 os.environ['PATH'] += os.pathsep + os.pathsep.join([PACKAGES['cellranger']])
 
 PACKAGES['fastq_path'] = '/opt/tobridge/FastQC'
