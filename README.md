@@ -368,13 +368,10 @@ If you use CellBridge please cite our paper:
   @Article{,
     author = {Nima Nouri and Andre H. Kurlovs, et al.},
     title = {Scaling up Single-Cell RNA-seq Data Analysis with CellBridge Workflow},
-    journal = {Journal},
+    journal = {Bioinformatics},
     year = {2023},
-    url = {URL},
-    doi = {DOI},
+    url = {https://academic.oup.com/bioinformatics/article/39/12/btad760/7479685},
+    doi = {10.1093/bioinformatics/btad760},
   }
 ```
 </details>
-
-
-
