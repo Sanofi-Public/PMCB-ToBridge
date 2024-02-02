@@ -32,13 +32,15 @@ PARSER.add_argument("--fastqc", required=False, action='store_true', default=Fal
 
 PARSER.add_argument("--star_solo", required=False, action='store_true', default=False,
                     help="Run STARsolo")
-PARSER.add_argument("--star_solo_chem", required=False, 
+PARSER.add_argument("--star_solo_chem", required=False,
                     help="What is the sample chemistry?")
 PARSER.add_argument("--star_solo_features", required=False, default="GeneFull_Ex50pAS",
                     help=("Quantification of different features; currently GeneFull_Ex50pAS (closest to CellRanger) "
                           "and SJ (splicing analysis) have been tested. You can use them together as 'GeneFull_Ex50pAS SJ'"))
 PARSER.add_argument("--star_solo_genome_generate", action='store_true', required=False,
                     help="Generate a ref genome for STARsolo")
+PARSER.add_argument("--star_solo_bam", action='store_true', required=False, default=True,
+                    help="Generate BAM instead of SAM")
 
 PARSER.add_argument("--cr_count", required=False, action='store_true', default=False,
                     help="Run cellranger count")
@@ -48,6 +50,16 @@ PARSER.add_argument("--cr_count_chemistry", required=False,
                     help="Specify chemistry for cellranger if cannot be detected automatically (rare)")
 PARSER.add_argument("--cr_count_forcecells", required=False,
                     help="Force a certain number of cells for cellranger count")
+PARSER.add_argument("--cr_count_bam", required=False, action="store_true",
+                    help="Produce BAM in the alignment")
+
+PARSER.add_argument("--alignment_qc", required=False, action="store_true",
+                    help="Generates a QC report based on alignment results")
+PARSER.add_argument("--alignment_qc_genebody", required=False, action="store_true",
+                    help="Generates a QC report based on alignment results which includes genebody coverage")
+
+PARSER.add_argument("--multi_qc", required=False, action="store_true", default=True,
+                    help="Generates a HTMP report based on all the QC")
 
 PARSER.add_argument("--cr_count_feature", required=False, action='store_true', default=False,
                     help="Feature bacrode assay using cellranger")
@@ -137,6 +149,15 @@ if ARGIES.cr_count_forcecells:
 if ARGIES.cr_count_feature:
     ARGDICT["cr_count_feature"] = ARGIES.cr_count_feature
     
+if ARGIES.cr_count_bam:
+    ARGDICT["cr_count_bam"] = ARGIES.cr_count_bam
+
+if ARGIES.alignment_qc:
+    ARGDICT["alignment_qc"] = ARGIES.alignment_qc
+    
+if ARGIES.alignment_qc_genebody:
+    ARGDICT["alignment_qc_genebody"] = ARGIES.alignment_qc_genebody
+
 if ARGIES.star_solo:
     ARGDICT["star_solo"] = ARGIES.star_solo
     
@@ -149,18 +170,31 @@ if ARGIES.star_solo_genome_generate:
     
 if "star_solo" in ARGDICT and not ARGIES.star_solo_chem:
     sys.exit('Please provide chemistry for your STAR Solo run')
-    
-if ARGIES.star_solo_chem:
-    ARGDICT["star_solo_chem"] = ARGIES.star_solo_chem
+elif "star_solo" in ARGDICT and ARGIES.star_solo_chem:
+    if ARGIES.star_solo_chem in ARGDICT["chemistry_file"].index:
+        ARGDICT["star_solo_chem"] = ARGIES.star_solo_chem
+    else:
+        sys.exit(f'The specified chemistry {ARGDICT["star_solo_chem"]} is not available \
+                 Please specify one of {",".join(ARGDICT["chemistry_file"].index.to_list())}')
 
 ARGDICT["star_solo_features"] = ARGIES.star_solo_features
+
+if ARGIES.star_solo_bam:
+    ARGDICT["star_solo_bam"] = ARGIES.star_solo_bam
+    
+if ARGIES.multi_qc:
+    ARGDICT["multi_qc"] = ARGIES.multi_qc
 
 if ARGIES.samp == 'All':
     ARGDICT["samp"] = 'All'
 else:
     ARGDICT["samp"] = ARGIES.samp.split(',')
-    
-ARGDICT["nthreads"] = ARGIES.nthreads
+
+try:
+    int(ARGIES.nthreads)
+    ARGDICT["nthreads"] = int(ARGIES.nthreads)
+except ValueError:
+    sys.exit('number of threads must be an integer')
 
 ######################### RUN SCRIPT ##########################
 
@@ -220,5 +254,15 @@ if __name__ == "__main__":
     if "star_solo" in ARGDICT:
         print("RUNNING STAR SOLO AND ORGANIZING OUTPUT")
         bf.run_starsolo(ARGDICT)
+        
+    #AlignmentQC
+    if "alignment_qc" in ARGDICT or "alignment_qc_genebody" in ARGDICT:
+        print('RUNNING ALIGNMENT QC!')
+        bf.run_alignment_qc_master(ARGDICT)
+        
+    #MultiQC
+    if "multi_qc" in ARGDICT:
+        print('RUNNING MULTIQC TO GENERATE QC REPORTS (IF EXIST)!')
+        bf.run_multi_qc(ARGDICT)
       
  #############################################################################

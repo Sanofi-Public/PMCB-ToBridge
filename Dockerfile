@@ -29,7 +29,7 @@ RUN apt-get update && \
         curl \
         cmake \
         git \
-        python3.9 \ 
+        python3.9 \
         python3-pip \
         bzip2 \
         gzip \
@@ -40,6 +40,7 @@ RUN apt-get update && \
         acl \
         software-properties-common \
         fonts-liberation \
+        dirmngr \
         gcc \
         alien \
         libssl-dev \
@@ -60,6 +61,15 @@ RUN apt-get update && \
         && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/*
+ 
+# get R       
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+    r-base \
+    r-base-core
        
 RUN pip3 install \
   setuptools \
@@ -67,7 +77,12 @@ RUN pip3 install \
   pandas \
   scipy \
   matplotlib \
-  scikit-learn
+  scikit-learn \
+  RSeQC \
+  bedparse \
+  multiqc \
+  pysam \
+  psutil
 
 RUN mkdir -p /opt/tobridge
 WORKDIR /opt/tobridge
@@ -84,9 +99,11 @@ RUN mkdir -p /opt/tobridge/genomes
 
 WORKDIR /opt/tobridge/
 
+# get fastqc
 RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v${FASTQC_VERSION}.zip
 RUN unzip fastqc_v${FASTQC_VERSION}.zip
 
+# install bcl convert
 COPY bcl-convert-${BCL_CONVERT_VERSION}.x86_64.rpm /opt/tobridge/
 RUN alien -i bcl-convert-${BCL_CONVERT_VERSION}.x86_64.rpm
 
@@ -95,8 +112,8 @@ RUN wget https://github.com/alexdobin/STAR/archive/${STAR_VERSION}.tar.gz
 RUN tar xzvf ${STAR_VERSION}.tar.gz
 WORKDIR /opt/tobridge/STAR-${STAR_VERSION}/source
 RUN make STAR
-    
 WORKDIR /opt/tobridge/
+
 RUN cp -r cellranger-${CELL_RANGER_VERSION}/lib/python/cellranger/barcodes barcodes
 COPY chemistry.csv /opt/tobridge/chemistry.csv
 RUN gunzip barcodes/*.gz

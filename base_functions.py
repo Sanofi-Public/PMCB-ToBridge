@@ -6,6 +6,7 @@ Created on Tue Feb  7 23:51:30 2023
 @author: E0463430
 """
 
+import csv
 import glob
 import gzip
 import subprocess
@@ -13,7 +14,9 @@ import os
 import sys
 import shutil
 import pandas as pd
-
+from multiprocessing import Pool
+import pysam
+from datetime import datetime
 
 ########################## TESTING STARTS HERE ############################
 
@@ -29,7 +32,7 @@ def run_fastqc(ARGDICT):
         fastqs_relevant_path = sorted([i for i in fastqs_path if "_R" in i])
         fastqs_command = " ".join(fastqs_relevant_path)
         command = f'fastqc {fastqs_command} --outdir /data/fastqc_output/{dirra_name} --threads {ARGDICT["nthreads"]}'
-        subprocess.call(command, shell=True)
+        subprocess.run(command, shell=True)
 
 
 def run_crfastq(ARGDICT):
@@ -53,7 +56,7 @@ def run_crfastq(ARGDICT):
                        f'--samplesheet {dirra}/SampleSheet.csv '
                        f'--id {dirra_name}')
         print(bcl2fastq_command)
-        subprocess.call(f"{bcl2fastq_command}", shell=True)
+        subprocess.run(f"{bcl2fastq_command}", shell=True)
         if not os.path.isdir(f'/data/input_fastq/{dirra_name}'):
             os.mkdir(f'/data/input_fastq/{dirra_name}')
         outfolders = glob.glob(f'/data/bcl_conversion/{dirra_name}/outs/fastq_path/*/')
@@ -98,7 +101,7 @@ def run_bclconvert(ARGDICT):
                        f'--output-directory /data/bcl_conversion/{dirra_name} '
                        f'--sample-sheet {dirra}/SampleSheet.csv')
         print(bcl_convert_command)
-        subprocess.call(f"{bcl_convert_command}", shell=True)
+        subprocess.run(f"{bcl_convert_command}", shell=True)
         if not os.path.isdir(f'/data/input_fastq/{dirra_name}'):
             os.mkdir(f'/data/input_fastq/{dirra_name}')
         else:
@@ -158,8 +161,8 @@ def run_crmkref(ARGDICT):
         
         print('incorporating additional sequences')
     
-        final_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
-        final_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        final_gtf = os.path.join(os.path.dirname(original_gtf), 'genes.gtf.modified')
+        final_fasta = os.path.join(os.path.dirname(original_fasta), 'genome.fa.modified')
         
         shutil.copy2(f'{original_gtf}', f'{final_gtf}')
         shutil.copy2(f'{original_fasta}', f'{final_fasta}')
@@ -182,7 +185,7 @@ def run_crmkref(ARGDICT):
                f'--fasta {final_fasta} '
                f'--genes {final_gtf}')
     
-    subprocess.call(command, shell=True)
+    subprocess.run(command, shell=True)
     shutil.copytree(f'/data/cr_count_reference_template/{ARGDICT["cr_genome_generate"]}',
                      '/data/cr_count_reference')
     os.chdir('/data')
@@ -191,7 +194,6 @@ def run_crmkref(ARGDICT):
 def organize_crcount(ARGDICT, samples):
     '''organize crcount output'''
     # COMBINE OUTPUT INTO READABLE FORMAT INCL CELLBRIDGE INPUT
-    print("ORGANIZING CR OUTPUT")
     if not os.path.isdir('/data/cr_count_organized_output'):
         os.mkdir('/data/cr_count_organized_output')
     if not os.path.isdir('/data/cr_count_organized_output/cellbridge'):
@@ -200,6 +202,8 @@ def organize_crcount(ARGDICT, samples):
         os.mkdir('/data/cr_count_organized_output/loupe_files')
     if not os.path.isdir('/data/cr_count_organized_output/web_summaries'):
         os.mkdir('/data/cr_count_organized_output/web_summaries')
+    if 'cr_count_bam' in ARGDICT and not os.path.isdir('/data/cr_count_organized_output/bam_files'):
+        os.mkdir('/data/cr_count_organized_output/bam_files')
     indirs_cellranger = [i for i in glob.glob('/data/cr_count_output/*/') if i.split('/')[-2] in samples]
     in_sampl = pd.DataFrame()
     final_samples = []
@@ -207,6 +211,11 @@ def organize_crcount(ARGDICT, samples):
         sample = indira.split('/')[-2]
         if os.path.isfile(f'{indira}/outs/metrics_summary.csv'):
             final_samples.append(sample)
+            if 'cr_count_bam' in ARGDICT:
+                shutil.copy2(f'{indira}/outs/possorted_genome_bam.bam',
+                     f'/data/cr_count_organized_output/bam_files/{sample}_possorted_genome_bam.bam')
+                shutil.copy2(f'{indira}/outs/possorted_genome_bam.bam.bai',
+                     f'/data/cr_count_organized_output/bam_files/{sample}_possorted_genome_bam.bam.bai')
             shutil.copy2(f'{indira}/outs/web_summary.html',
                          f'/data/cr_count_organized_output/web_summaries/{sample}_web_summary.html')
             shutil.copy2(f'{indira}/outs/cloupe.cloupe',
@@ -263,8 +272,10 @@ def run_crcount(ARGDICT):
                 command += (f'--chemistry {ARGDICT["cr_count_chemistry"]} ')
             if "cr_count_forcecells" in ARGDICT:
                 command += (f'--force-cells {ARGDICT["cr_count_forcecells"]} ')
+            if "cr_count_bam" in ARGDICT:
+                command = command.replace(' --no-bam', '')
             print(command)
-            subprocess.call(command, shell=True)
+            subprocess.run(command, shell=True)
             
     else:
         if not os.path.isdir('/data/library_files'):
@@ -275,7 +286,7 @@ def run_crcount(ARGDICT):
         
         samples = []
         for lib_file in libraries:
-            sample = lib_file.split('/')[-1].split('.')[0]
+            sample = os.path.dirname(lib_file).split('.')[0]
             command =  (f'cellranger count '
                         f'--id {sample} '
                         f'--libraries {lib_file} '
@@ -286,14 +297,16 @@ def run_crcount(ARGDICT):
                 command += (f'--chemistry {ARGDICT["cr_count_chemistry"]} ')
             if "cr_count_forcecells" in ARGDICT:
                 command += (f'--force-cells {ARGDICT["cr_count_forcecells"]} ')
+            if "cr_count_bam" in ARGDICT:
+                command = command.replace(' --no-bam', '')
             if ARGDICT["samp"] == "All" or (ARGDICT["samp"] != "All" and sample in ARGDICT["samp"]):
                 samples.append(sample)
                 print(command)
-                subprocess.call(command, shell=True)
+                subprocess.run(command, shell=True)
      
-    print("ORGANIZING CR COUNT OUTPUT")            
+    print("ORGANIZING CR COUNT OUTPUT")       
     organize_crcount(ARGDICT, samples)
-        
+    
 
 def starsolo_mkref(ARGDICT):
     '''makes a reference genome for starsolo'''
@@ -318,8 +331,8 @@ def starsolo_mkref(ARGDICT):
         
         print('incorporating additional sequences')
     
-        final_gtf = '/'.join(original_gtf.split('/')[:-1]) + '/genes.gtf.modified'
-        final_fasta = '/'.join(original_fasta.split('/')[:-1]) + '/genome.fa.modified'
+        final_gtf = os.path.join(os.path.dirname(original_gtf), 'genes.gtf.modified')
+        final_fasta = os.path.join(os.path.dirname(original_fasta), 'genome.fa.modified')
         
         shutil.copy2(f'{original_gtf}', f'{final_gtf}')
         shutil.copy2(f'{original_fasta}', f'{final_fasta}')
@@ -340,7 +353,7 @@ def starsolo_mkref(ARGDICT):
                f'--genomeDir /data/star_solo_reference '
                f'--genomeFastaFiles {final_fasta} '
                f'--sjdbGTFfile {final_gtf} ')
-    subprocess.call(command, shell=True)
+    subprocess.run(command, shell=True)
     print("REFERENCE GENOME FOR STAR SOLO CREATED SUCCESSFULLY")
 
 
@@ -348,7 +361,7 @@ def get_fastq_info(infiles):
     '''goes over fastq to prepare star solo commands'''
     infiles_sorted = {}
     for filey in infiles:
-        filename = filey.split('/')[-1]
+        filename = os.path.basename(filey)
         name = filename.split('_S')[0]
         if name not in infiles_sorted:
             infiles_sorted[name] = {}
@@ -442,11 +455,7 @@ def run_starsolo(ARGDICT):
          samples = ARGDICT["samp"]
     
     for namey in samples:
-        staroutputdir = f'/data/STAR_output/{namey}'        
-
-        if ARGDICT["star_solo_chem"] not in ARGDICT["chemistry_file"].index:
-            sys.exit(f'The specified chemistry {ARGDICT["star_solo_chem"]} is not available \
-                     Please specify one of {",".join(ARGDICT["chemistry_file"].index.to_list())}')
+        staroutputdir = f'/data/STAR_output/{namey}'
         
         barcode_file = ARGDICT["chemistry_file"].loc[ARGDICT["star_solo_chem"], "List"]
         barcode_len = ARGDICT["chemistry_file"].loc[ARGDICT["star_solo_chem"], "barcode"]
@@ -454,23 +463,194 @@ def run_starsolo(ARGDICT):
         
         if namey in starsolo_fastq_info:
         
-            command = (f'STAR \
-            --runThreadN {ARGDICT["nthreads"]} \
-            --genomeDir {ARGDICT["star_solo_reference"]} \
-            --readFilesIn {starsolo_fastq_info[namey]["R2"]} {starsolo_fastq_info[namey]["R1"]} \
-            --soloType CB_UMI_Simple \
-            --soloCBwhitelist {ARGDICT["barcodes"]}/{barcode_file} \
-            --readFilesCommand zcat \
-            --soloCBlen {barcode_len} \
-            --soloUMIlen {umi_len} \
-            --outFileNamePrefix {staroutputdir} \
-            --soloFeatures {ARGDICT["star_solo_features"]}')
+            command = (f'STAR '
+                       f'--runThreadN {ARGDICT["nthreads"]} '
+                       f'--genomeDir {ARGDICT["star_solo_reference"]} '
+                       f'--readFilesIn {starsolo_fastq_info[namey]["R2"]} {starsolo_fastq_info[namey]["R1"]} '
+                       f'--soloType CB_UMI_Simple '
+                       f'--soloCBwhitelist {ARGDICT["barcodes"]}/{barcode_file} '
+                       f'--readFilesCommand zcat '
+                       f'--soloCBlen {barcode_len} '
+                       f'--soloUMIlen {umi_len} '
+                       f'--outFileNamePrefix {staroutputdir} '
+                       f'--soloFeatures {ARGDICT["star_solo_features"]}')
+            
+            if "star_solo_bam" in ARGDICT:
+                command += (' --outSAMattributes NH HI nM AS CR UR CB UB GX GN sS sQ sM '
+                            '--outSAMtype BAM SortedByCoordinate')
             
             print(command)
-            subprocess.call(command, shell=True)
+            subprocess.run(command, shell=True)
         
         else:
             print(f'Sample {namey} is not available! Please check the name and retry')
             
     print("ORGANIZING SOLO OUTPUT")
     organize_starsolo_output(ARGDICT, samples)
+   
+   
+# for multiprocessing
+def execute_sbp_command(command, 
+                        workdir='/data/cr_count_organized_output/'):
+    '''execute the command using subprocess'''
+    try:
+        output = subprocess.check_output(command,
+                                         shell=True,
+                                         cwd=workdir,
+                                         stderr=subprocess.STDOUT)
+        return output.decode()
+    except subprocess.CalledProcessError as errata:
+        return errata.output.decode()
+
+
+def run_alignment_qc(ARGDICT, alignment_type):
+    '''run alignment qc on cellranger count bams'''
+    
+    if alignment_type == 'cr_count':
+    
+        alignment_dir = '/data/cr_count_organized_output/cr_count_alignment_qc'
+        
+        if not os.path.isdir(alignment_dir):
+            os.mkdir(alignment_dir)
+        
+        bams = sorted(glob.glob('/data/cr_count_organized_output/bam_files/*.bam'))
+        samples = [os.path.basename(bam).split('_possorted')[0] for bam in bams]
+    
+    if alignment_type == 'star':
+        
+        alignment_dir = '/data/STAR_organized_output/star_alignment_qc'
+        
+        if not os.path.isdir(alignment_dir):
+            os.mkdir(alignment_dir)
+        
+        bams = sorted(glob.glob('/data/STAR_output/*.bam'))
+        
+        # could in the future be multiprocessed
+        for bam in bams:
+            if not os.path.isfile(f'{bam}.bai'):
+                pysam.index(bam)
+        
+        samples = [os.path.basename(bam).split('Aligned')[0] for bam in bams]       
+    
+    for sample in samples:
+        if not os.path.isdir(f'{alignment_dir}/{sample}'):
+            os.mkdir(f'{alignment_dir}/{sample}')
+            #os.mkdir(f'{alignment_dir}/{sample}/work')
+
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'performing GC stats at {current_time}')
+    commands = [(f'read_GC.py '
+                 f'-i {bam} '
+                 f'-o {sample}',
+                 f'{alignment_dir}/{sample}')
+                 for bam, sample in zip(bams, samples)]
+ 
+    with Pool(processes=ARGDICT["nthreads"]) as pool:
+        pool.starmap(execute_sbp_command, commands)
+    
+    # convert to bam
+    anno_dir = '/data/cr_count_reference/genes'
+    if os.path.isfile(f'{anno_dir}/genes.gtf.gz'):
+        gff_to_bed = (f'zcat {anno_dir}/genes.gtf.gz | bedparse gtf2bed \
+                      > {anno_dir}/genes.bed')
+        subprocess.run(gff_to_bed, shell=True)
+        print('conversion of GTF to BED12 a success!')
+    elif os.path.isfile(f'{anno_dir}/genes.gtf'):
+        gff_to_bed = (f'bedparse gtf2bed {anno_dir}/genes.gtf \
+                      > {anno_dir}/genes.bed')
+        print('conversion of GTF to BED12 a success!')
+        subprocess.run(gff_to_bed, shell=True)
+    else:
+        sys.exit('GTF not found; cannot convert to BED. exiting.')
+    
+    if "alignment_qc_genebody" in ARGDICT:
+        
+        now = datetime.now()
+        current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(f'performing gene body coverage at {current_time}')
+        
+        commands = [(f'geneBody_coverage.py -i {bam} '
+                     f'-r {anno_dir}/genes.bed '
+                     f'-o {sample}',
+                     f'{alignment_dir}/{sample}')
+                    for bam, sample in zip(bams, samples)]
+    
+        with Pool(processes=ARGDICT["nthreads"]) as pool:
+            pool.starmap(execute_sbp_command, commands)
+    
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'performing junction annotation at {current_time}')
+    
+    commands = [(f'junction_annotation.py -i {bam} '
+                 f'-r {anno_dir}/genes.bed '
+                 f'-o {sample}',
+                 f'{alignment_dir}/{sample}')
+                for bam, sample in zip(bams, samples)]
+
+    with Pool(processes=ARGDICT["nthreads"]) as pool:
+        pool.starmap(execute_sbp_command, commands)
+        
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'performing junction saturation at {current_time}')
+        
+    commands = [(f'junction_saturation.py -i {bam} '
+                 f'-r {anno_dir}/genes.bed '
+                 f'-o {sample}',
+                 f'{alignment_dir}/{sample}')
+                for bam, sample in zip(bams, samples)]
+
+    with Pool(processes=ARGDICT["nthreads"]) as pool:
+        pool.starmap(execute_sbp_command, commands)
+        
+    now = datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'performing read distribution at {current_time}')
+    
+    print('performing read distribution')
+    commands= [(f'read_distribution.py '
+                f'-i {bam} '
+                f'-r {anno_dir}/genes.bed '
+                f'> {sample}.read_dist.txt',
+                f'{alignment_dir}/{sample}')
+                     for bam, sample in zip(bams, samples)]
+                
+    with Pool(processes=ARGDICT["nthreads"]) as pool:
+        pool.starmap(execute_sbp_command, commands)
+
+
+def run_alignment_qc_master(ARGDICT):
+    '''run alignment qc on cellranger count and star solo'''
+    
+    if not os.path.isdir('/data/cr_count_organized_output/bam_files'):
+        print('CELLRANGER QC NOT PERFORMED BECAUSE BAMS NOT GENERATED')
+    else:
+        run_alignment_qc(ARGDICT, alignment_type = "cr_count")
+    
+    if not os.path.isdir('/data/STAR_output') or len(glob.glob('/data/STAR_output/*.bam'))==0:
+        print('STAR QC NOT PERFORMED BECAUSE BAMS NOT GENERATED')
+    else:
+        run_alignment_qc(ARGDICT, alignment_type = "star")
+
+        
+def run_multi_qc(ARGDICT):
+    '''this function runs multiqc'''
+    
+    multiqc_outdir = '/data/multiqc_report'
+    
+    if not os.path.isdir(multiqc_outdir):
+        os.mkdir(multiqc_outdir)
+    
+    command = [rsdir for rsdir in ['/data/fastqc_output/',
+                                    '/data/cr_count_organized_output/',
+                                    '/data/STAR_organized_output/']
+                if os.path.isdir(rsdir)]
+    
+    if len(command) > 0:
+        command = ['multiqc'] + command
+        command = ' '.join(command)
+    
+        subprocess.run(command, shell=True,
+                       cwd=multiqc_outdir)
