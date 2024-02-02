@@ -5,6 +5,13 @@
 <img width="40%" src="./cellbridge_logo.png"> 
 </p>
 
+# News
+
+<b>Feb 2, 2024</b>: we have made the first push of a QC update (plus some minor changes).
+The GitHub is now noticeably different from the Docker Hub version of the pipeline.
+the new Docker image will be pushed to the Hub upon the next release of ToBridge
+(hopefully within the next two weeks) once we wrap up the updates and finish testing.
+
 # CellBridge
 
 **CellBridge** is an automated and versatile workflow meticulously designed to
