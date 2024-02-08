@@ -3,7 +3,7 @@
 """
 Created on Tue Feb  7 23:51:30 2023
 
-@author: Andre Kurlovs
+@author: Andre Kurlovs and Nima Nouri
 """
 
 import csv
