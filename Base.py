@@ -3,7 +3,7 @@
 """
 Created on Tue Feb  7 23:51:30 2023
 
-@author: E0463430
+@author: Andre Kurlovs
 """
 
 import argparse
@@ -33,36 +33,36 @@ PARSER.add_argument("--fastqc", required=False, action='store_true', default=Fal
 PARSER.add_argument("--star_solo", required=False, action='store_true', default=False,
                     help="Run STARsolo")
 PARSER.add_argument("--star_solo_chem", required=False,
-                    help="What is the sample chemistry?")
+                    help="What is the sample chemistry? If you run STARsolo, this must be provided. Example: SC3Pv3")
 PARSER.add_argument("--star_solo_features", required=False, default="GeneFull_Ex50pAS",
                     help=("Quantification of different features; currently GeneFull_Ex50pAS (closest to CellRanger) "
                           "and SJ (splicing analysis) have been tested. You can use them together as 'GeneFull_Ex50pAS SJ'"))
 PARSER.add_argument("--star_solo_genome_generate", action='store_true', required=False,
-                    help="Generate a ref genome for STARsolo")
+                    help="Generate a reference genome for STARsolo")
 PARSER.add_argument("--star_solo_bam", action='store_true', required=False, default=True,
-                    help="Generate BAM instead of SAM")
+                    help="Generate sorted BAM files instead of SAMs")
 
 PARSER.add_argument("--cr_count", required=False, action='store_true', default=False,
                     help="Run cellranger count")
 PARSER.add_argument("--cr_genome_generate", required=False,
-                    help="Provide a name for new cellranger reference genome")
+                    help="Generate a new cellranger reference genome. Please provide a desired name")
 PARSER.add_argument("--cr_count_chemistry", required=False,
                     help="Specify chemistry for cellranger if cannot be detected automatically (rare)")
 PARSER.add_argument("--cr_count_forcecells", required=False,
                     help="Force a certain number of cells for cellranger count")
 PARSER.add_argument("--cr_count_bam", required=False, action="store_true",
-                    help="Produce BAM in the alignment")
+                    help="Produce BAM files upon alignment. Note that the default is to not produce BAMs")
+
+PARSER.add_argument("--cr_count_feature", required=False, action='store_true', default=False,
+                    help="Feature bacrode assay using cellranger")
 
 PARSER.add_argument("--alignment_qc", required=False, action="store_true",
                     help="Generates a QC report based on alignment results")
 PARSER.add_argument("--alignment_qc_genebody", required=False, action="store_true",
-                    help="Generates a QC report based on alignment results which includes genebody coverage")
+                    help="Generates a QC report based on alignment results, which includes genebody coverage (slow)")
 
 PARSER.add_argument("--multi_qc", required=False, action="store_true", default=True,
-                    help="Generates a HTMP report based on all the QC")
-
-PARSER.add_argument("--cr_count_feature", required=False, action='store_true', default=False,
-                    help="Feature bacrode assay using cellranger")
+                    help="Generates an HTML report based on all the QC")
 
 PARSER.add_argument("--samp", required=False, default="All",
                     help="If you only want cellranger run on specific samples, use this flag, e.g. --samp S1,S5")

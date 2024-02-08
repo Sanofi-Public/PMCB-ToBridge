@@ -3,7 +3,7 @@
 """
 Created on Tue Feb  7 23:51:30 2023
 
-@author: E0463430
+@author: Andre Kurlovs
 """
 
 import csv
@@ -17,6 +17,7 @@ import pandas as pd
 from multiprocessing import Pool
 import pysam
 from datetime import datetime
+import psutil
 
 ########################## TESTING STARTS HERE ############################
 
@@ -79,6 +80,9 @@ def run_bclconvert(ARGDICT):
     dirs_to_convert = glob.glob('/data/input_bcl/*/')
     if not os.path.isdir('/data/bcl_conversion'):
         os.mkdir('/data/bcl_conversion')
+    else:
+        shutil.rmtree('/data/bcl_conversion')
+        os.mkdir('/data/bcl_conversion')
     if not os.path.isdir('/data/input_fastq'):
         os.mkdir('/data/input_fastq')
     if not dirs_to_convert:
@@ -92,7 +96,7 @@ def run_bclconvert(ARGDICT):
                 header = in_sheet.readlines()[0]
                 nlanes = len(glob.glob(f'{dirra}/Data/Intensities/BaseCalls/*/'))
                 if "Lane" in header:
-                    convert_sheet(f'{dirra}/SampleSheet.csv',  ARGDICT["converter_sheet"], nlanes)
+                    convert_sheet(f'{dirra}/SampleSheet.csv', ARGDICT["converter_sheet"], nlanes)
                     print("SAMPLE SHEET CONVERTED TO BCL CONVERT FORMAT. PLEASE DO NOT CONVERT AGAIN")
                 else:
                     print("THE SHEET APPEARS TO NOT BE IN 10X FORMAT. CONVERSION SKIPPED")
@@ -514,6 +518,7 @@ def run_alignment_qc(ARGDICT, alignment_type):
             os.mkdir(alignment_dir)
         
         bams = sorted(glob.glob('/data/cr_count_organized_output/bam_files/*.bam'))
+        ave_bam_load = sum([os.path.getsize(bam) / 2**30 for bam in bams])/len(bams)
         samples = [os.path.basename(bam).split('_possorted')[0] for bam in bams]
     
     if alignment_type == 'star':
@@ -524,14 +529,27 @@ def run_alignment_qc(ARGDICT, alignment_type):
             os.mkdir(alignment_dir)
         
         bams = sorted(glob.glob('/data/STAR_output/*.bam'))
+        ave_bam_load = sum([os.path.getsize(bam) / 2**30 for bam in bams])/len(bams)
         
         # could in the future be multiprocessed
         for bam in bams:
             if not os.path.isfile(f'{bam}.bai'):
                 pysam.index(bam)
         
-        samples = [os.path.basename(bam).split('Aligned')[0] for bam in bams]       
+        samples = [os.path.basename(bam).split('Aligned')[0] for bam in bams] 
     
+    # some functions have high memory load
+    # which can crash the program during multiprocessing
+    # this part will adjust the number of threads
+    total_bam_load = ave_bam_load * ARGDICT['nthreads']
+    actual_bam_load = total_bam_load*0.15 # very approx
+    mem = psutil.virtual_memory()
+    available_memory_gb = mem.available / 2**30
+    if actual_bam_load > available_memory_gb:
+        revised_threads = int(available_memory_gb*(1/0.15) / ave_bam_load)
+    else:
+        revised_threads = ARGDICT['nthreads']
+
     for sample in samples:
         if not os.path.isdir(f'{alignment_dir}/{sample}'):
             os.mkdir(f'{alignment_dir}/{sample}')
@@ -576,7 +594,7 @@ def run_alignment_qc(ARGDICT, alignment_type):
                      f'{alignment_dir}/{sample}')
                     for bam, sample in zip(bams, samples)]
     
-        with Pool(processes=ARGDICT["nthreads"]) as pool:
+        with Pool(processes=revised_threads) as pool:
             pool.starmap(execute_sbp_command, commands)
     
     now = datetime.now()
@@ -602,7 +620,7 @@ def run_alignment_qc(ARGDICT, alignment_type):
                  f'{alignment_dir}/{sample}')
                 for bam, sample in zip(bams, samples)]
 
-    with Pool(processes=ARGDICT["nthreads"]) as pool:
+    with Pool(processes=revised_threads) as pool:
         pool.starmap(execute_sbp_command, commands)
         
     now = datetime.now()
@@ -619,6 +637,8 @@ def run_alignment_qc(ARGDICT, alignment_type):
                 
     with Pool(processes=ARGDICT["nthreads"]) as pool:
         pool.starmap(execute_sbp_command, commands)
+    
+    print('alingment QC done')
 
 
 def run_alignment_qc_master(ARGDICT):
