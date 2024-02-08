@@ -13,7 +13,7 @@ ARG FASTQC_VERSION=0.12.1
 # Set maintainer
 LABEL maintainer="Andre Kurlovs <andre.kurlovs@sanofi.com>" \
       description="ToBridge portion of CellBridge Pipeline"
-LABEL version="0.1.0"
+LABEL version="1.1.0"
 
 RUN apt-get update && \
         apt-get install -y \
