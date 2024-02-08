@@ -20,8 +20,7 @@ def get_conversion_tables(path_to_dir):
     combino = pd.concat(all_conv)
     return combino
 
-# this needs to account for a different number of lanes
-# will deal with this
+
 def convert_sheet(infile, combino, nlanes):
     '''converts sample sheet from 10x format to bcl convert friendly format'''
     
