@@ -89,7 +89,6 @@ PACKAGES['star_path'] = '/opt/tobridge/STAR-2.7.10b/source'
 os.environ['PATH'] += os.pathsep + os.pathsep.join([PACKAGES['star_path']])
 
 # HARD-CODED PARAMETERS FIRST
-# nota that STAR Solo reference is coded in below
 
 ARGDICT = {}
 ARGDICT["input"] = []
@@ -107,7 +106,7 @@ ARGDICT["chemistry_file"] = pd.read_csv("/opt/tobridge/chemistry.csv",
                                         header=0,
                                         index_col=0)
 
-# PASSED-IN ARGUMENTS
+# PASSED-IN ARGUMENTS INTO DICTIONARY FOR STANDARDIZATION
 ARGIES = PARSER.parse_args()
 
 if ARGIES.cr_mkfastq:

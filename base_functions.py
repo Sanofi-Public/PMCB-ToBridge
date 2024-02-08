@@ -19,7 +19,6 @@ import pysam
 from datetime import datetime
 import psutil
 
-########################## TESTING STARTS HERE ############################
 
 def run_fastqc(ARGDICT):
     '''FASTQC on nascnet FASTQ files'''

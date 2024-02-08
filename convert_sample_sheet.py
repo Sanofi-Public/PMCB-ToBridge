@@ -10,6 +10,7 @@ import pandas as pd
 import glob
 import shutil
 
+
 def get_conversion_tables(path_to_dir):
     '''gets all the conversion tables for the sample sheet conversion'''
     all_conv = []
