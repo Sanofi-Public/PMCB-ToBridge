@@ -278,6 +278,7 @@ the pre-processing pipeline which perform `fastqc` and `cellranger count`:
 docker run -v ${PWD}:/data:z pmcbscb/tobridge:latest tobridge \
                                            --fastqc \
                                            --cr_count \
+                                           --cr_count_bam \
                                            --alignment_qc
 ```
 
